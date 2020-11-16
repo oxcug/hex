@@ -1,7 +1,8 @@
 import XCTest
 
-import hexTests
+import HexStorageTests
 
 var tests = [XCTestCaseEntry]()
-tests += hexTests.allTests()
+tests += HexStorageTests.__allTests()
+
 XCTMain(tests)

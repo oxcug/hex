@@ -11,15 +11,15 @@ extension Configuration {
 
 class Example: Model {
     
-    override class func migrations() -> ModelMigrationBuilder {
-        .build(
-            .previous("example",
-                      .attribute(.string, named: "soup")
-            ),
+    override class func migrate(from current: ModelMigration) -> HexStorage.Operation {
+        try! current.versioned(
             .latest("Example",
                     .attribute(.string, named: "string"),
                     .attribute(.date, named: "date"),
-                    .attribute(.float, named: "double")
+                    .attribute(.float, named: "double"),
+                    .attribute(.string, named: "nullableString"),
+                    .attribute(.date, named: "nullableDate"),
+                    .attribute(.float, named: "nullableDouble")
             )
         )
     }

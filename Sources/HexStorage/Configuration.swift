@@ -20,10 +20,9 @@ public class Configuration {
     
     private var dbs = [RelationalDatabase]()
     
-    ///
-    func apply<T: RawModel>(_ operation: Operation<T>) {
-        
-    }
+//    func apply(_ operation: Operation) {
+//
+//    }
     
     private func executeQuery(_ db: RelationalDatabase, sql: String) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil

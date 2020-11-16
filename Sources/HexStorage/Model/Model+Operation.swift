@@ -3,7 +3,7 @@ import SQLite3
 
 public extension RawModel {
     
-    var operationBuilder: Operation<Self> {
-        .init(dependencies: [])
+    var operationBuilder: Operation {
+        Operation()
     }
 }

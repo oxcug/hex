@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "hex",
+    name: "Hex Storage",
     products: [
         .library(name: "HexStorage", targets: ["HexStorage"]),
     ],
