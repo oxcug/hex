@@ -1,15 +1,7 @@
-<style>
-img[src*="#icon"] {
-   width:175px;
-   height:175px;
-}
-</style>
 
-<center>
-![Icon](res/Hex Storage Icon.png#icon)
+![Icon](res/Hex%20Storage%20Icon.png)
 
 # Hex Storage
-</center>
 
 This library is designed to Application development by providing a simple and unified API for:
 
