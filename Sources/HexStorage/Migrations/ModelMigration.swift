@@ -1,29 +1,21 @@
 import Foundation
 
-public struct ModelMigrationBuilder {
-    
-    public static func build(_ migrations: ModelMigration...) -> Self {
-        return .init()
-    }
-}
-
-public struct AttributeMigration {
-    
-    public static func attribute(_  valueType: AttributeValueType, named: StaticString, previousName: StaticString? = nil) -> Self {
-        .init()
-    }
-}
-
 public struct ModelMigration {
     
-    /// Adds a previous Model definition
-    /// - Returns: A new `TableMigration`.
-    public static func previous(_ name: StaticString, _ attributes: AttributeMigration...) -> Self {
-        return .init()
+    /// Constructs a `ModelMigrationBuilder` using the model schema definitions provided in the migrations parameter.
+    /// Using the provided list of schema's, it automatically builds the necessary operations to migrate an older version of the model to the newest.
+    /// - Parameter migrations: A list of schema's that define each historical version of the model.
+    /// - Returns: A new migration builder.
+    public func versioned(_ migrations: ModelSchema...) throws -> Operation {
+        /// Find the latest model migration,
+        ///     If multiple found, throw `.multipleLatestModelMigrations`
+        ///     If none found, throw `.noLatestModelMigration`
+        let latestMigrations = migrations.filter { $0.isLatest }
+        guard let latestMigration = latestMigrations.first, latestMigrations.count == 1 else {
+            throw latestMigrations.count > 1 ? MigrationError.multipleLatestModelMigrations
+                                             : MigrationError.noLatestModelMigration
+        }
+        
+        return Operation()
     }
-    
-    public static func latest(_ name: StaticString, _ attributes: AttributeMigration...) -> Self {
-        return .init()
-    }
-
 }

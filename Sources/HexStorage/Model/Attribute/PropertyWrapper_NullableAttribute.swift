@@ -1,24 +1,20 @@
 import Foundation
 
+/// Convenience Property Wrapper API for defining a nullable Model Attribute.
 @propertyWrapper public struct NullableAttribute<T: AttributeValue>: AttributeProtocol {
     
-    private typealias T = T
-    
-    public var cachedValue: T? = nil
+    public var cachedValue: T?
 
     public var wrappedValue: Optional<T> {
         get { cachedValue }
         set {  }
     }
-    
-    public init() {
-    }
-    
+        
     public init(cachedValue: T? = nil) {
         self.cachedValue = cachedValue
     }
     
-    func metadata(with columnName: String) -> AttributeMetadata {
-        return .init(name: columnName, valueType: T.valueType, nullable: true)
+    func metadata(with attributeName: String) -> AttributeMetadata {
+        return .init(name: attributeName, valueType: T.valueType, nullable: true)
     }
 }

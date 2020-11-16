@@ -10,7 +10,7 @@ public protocol RawModel {
     
     static func columns(for config: Configuration) -> [AttributeMetadata]
         
-    static func migrations() -> ModelMigrationBuilder
+    static func migrate(from current: ModelMigration) -> Operation
 }
 
 open class Model: RawModel, Identifiable, Equatable {
@@ -21,7 +21,7 @@ open class Model: RawModel, Identifiable, Equatable {
         return lhs.identifier == rhs.identifier
     }
     
-    open class func migrations() -> ModelMigrationBuilder {
+    open class func migrate(from current: ModelMigration) -> Operation {
         fatalError("Subclass must implement migrations!")
     }
     
