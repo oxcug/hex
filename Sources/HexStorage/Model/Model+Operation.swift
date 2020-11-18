@@ -1,4 +1,3 @@
-import Foundation
 import SQLite3
 
 public extension RawModel {

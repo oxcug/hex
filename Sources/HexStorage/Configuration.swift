@@ -1,16 +1,26 @@
+#if canImport(Foundation)
 import Foundation
+#elseif canImport(SwiftFoundation)
+import SwiftFoundation
+#else
+#error("Cannot import dependency`URL` from either OpenFoundation or Foundation.")
+#endif
+
 import SQLite3
 
 private struct RelationalDatabase {
+    
     var sql: OpaquePointer
-    var migrationHeads: [String: UInt]
+    
+    var latestTableMigrationCountMap: [String: UInt?]
+    
+    var pendingOperation: Operation? = nil
 }
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
 public enum Connection {
     case memory, file(url: URL)
 }
-
 
 public class Configuration {
     
@@ -19,11 +29,7 @@ public class Configuration {
     public var columnNamePrefix: String?
     
     private var dbs = [RelationalDatabase]()
-    
-//    func apply(_ operation: Operation) {
-//
-//    }
-    
+
     private func executeQuery(_ db: RelationalDatabase, sql: String) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
         let rc = sqlite3_exec(db.sql, sql, { (_, argc, argv, columnName) -> Int32 in
@@ -33,6 +39,10 @@ public class Configuration {
         guard rc == SQLITE_OK, errorMessage == nil else {
             fatalError("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
         }
+    }
+    
+    public func execute(operation: Operation) {
+//        let sql = operation.compile(model: <#T##RawModel#>, for: self)
     }
     
     public func add(model: RawModel.Type...) throws {
@@ -86,7 +96,7 @@ public class Configuration {
                 fatalError("Failed to open database. Error (code: \(rc)): \(String(cString: sqlite3_errstr(rc))).")
             }
             
-            return RelationalDatabase(sql: handle, migrationHeads: .init())
+            return RelationalDatabase(sql: handle, latestTableMigrationCountMap: [:])
         }
         
         /// Last but not least, we prepare our new database connections by running the query below.

@@ -1,5 +1,3 @@
-import Foundation
-
 public struct AttributeMetadata {
     
     public let name: String

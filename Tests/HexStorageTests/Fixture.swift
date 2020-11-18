@@ -1,4 +1,11 @@
+#if canImport(Foundation)
 import Foundation
+#elseif canImport(SwiftFoundation)
+import SwiftFoundation
+#else
+#error("Cannot import dependency `Date` from either OpenFoundation or Foundation.")
+#endif
+
 import HexStorage
 
 extension Configuration {

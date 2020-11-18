@@ -1,4 +1,10 @@
+#if canImport(Foundation)
 import Foundation
+#elseif canImport(SwiftFoundation)
+import SwiftFoundation
+#else
+#error("Cannot import dependency `UUID` from either OpenFoundation or Foundation.")
+#endif
 
 public protocol RawModel {
     
