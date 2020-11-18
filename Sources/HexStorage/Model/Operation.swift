@@ -1,61 +1,51 @@
-import Foundation
+internal enum OperationType {
+    case create, read, update, delete
+}
 
 public struct Operation {
     
-    public enum QueryMethod {
-        case all, first, last
-    }
-    
-    internal enum Style {
-        case upsert, find, delete, rename
-    }
-    
     internal enum Subject {
-        case column, table
+        case column, table, row
     }
     
-    var columnValues = [String: AttributeValue]()
-
-    var style: Style? = nil
+    var models: [RawModel.Type]? = nil
+    
+    var type: OperationType? = nil
     
     var name: String? = nil
     
     var subject: Subject? = nil
 
-    var dependencies = [Operation]()
+    var dependencies: [Operation]? = nil
     
     init() {
         
     }
     
-    init(_ style: Style, _ subject: Subject) {
-        self.style = style
+    init(_ type: OperationType, _ subject: Subject, named: String) {
+        self.type = type
         self.subject = subject
     }
     
     func compile<Model: RawModel>(model: Model, for configuration: Configuration) -> String {
         var out: String
         
-        switch style {
-        case .upsert:
+        switch type {
+        case .create:
             out = """
                 INSERT IN \(Model.tableName(for: configuration));
                 """
-        case .rename: fallthrough
-        case .find: fallthrough // TODO: Implement other operation styles.
+        case .update: fallthrough
+        case .read: fallthrough // TODO: Implement other operation styles.
         case .delete: fallthrough
         case .none: out = ""
         }
         
-        for d in dependencies {
+        for d in dependencies ?? [] {
             out = out + d.compile(model: model, for: configuration)
         }
         
         return out
-    }
-    
-    public func find(_ method: QueryMethod) -> Operation {
-        return Operation()
     }
     
     /// Instructs the configuratino to update or insert this model.

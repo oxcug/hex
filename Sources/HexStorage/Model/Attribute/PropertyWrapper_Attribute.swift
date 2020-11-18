@@ -1,5 +1,3 @@
-import Foundation
-
 /// A Convenience Wrapper to export a variable and link it to a value represented in a Table.
 @propertyWrapper public struct Attribute<T: AttributeValue>: AttributeProtocol {
             
@@ -15,6 +13,6 @@ import Foundation
     }
     
     func metadata(with attributeName: String) -> AttributeMetadata {
-        return .init(name: attributeName, valueType: T.valueType, nullable: false)
+        return AttributeMetadata(name: attributeName, valueType: T.valueType, nullable: false)
     }
  }

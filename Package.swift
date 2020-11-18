@@ -1,5 +1,4 @@
 // swift-tools-version:5.3
-
 import PackageDescription
 
 let package = Package(
@@ -8,10 +7,14 @@ let package = Package(
         .library(name: "HexStorage", targets: ["HexStorage"]),
     ],
     dependencies: [
-        
+        .package(url: "https://github.com/PureSwift/SwiftFoundation.git", from: "3.0.0"),
     ],
     targets: [
-        .target(name: "HexStorage", dependencies: []),
-        .testTarget(name: "HexStorageTests", dependencies: [ .target(name: "HexStorage") ]),
+        .target(name: "HexStorage", dependencies: [
+            .product(name: "SwiftFoundation", package: "SwiftFoundation")
+        ]),
+        .testTarget(name: "HexStorageTests", dependencies: [
+            .target(name: "HexStorage")
+        ]),
     ]
 )

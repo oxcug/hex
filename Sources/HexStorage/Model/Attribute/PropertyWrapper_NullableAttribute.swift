@@ -1,5 +1,3 @@
-import Foundation
-
 /// Convenience Property Wrapper API for defining a nullable Model Attribute.
 @propertyWrapper public struct NullableAttribute<T: AttributeValue>: AttributeProtocol {
     

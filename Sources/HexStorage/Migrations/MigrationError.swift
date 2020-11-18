@@ -1,7 +1,7 @@
-import Foundation
 
 enum MigrationError: Error {
-    case multipleLatestModelMigrations,
+    case migrationFailed,
+         multipleLatestModelMigrations,
          noLatestModelMigration,
          duplicateAttributeEntriesForSingleModel
 }
