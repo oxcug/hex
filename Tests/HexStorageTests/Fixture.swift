@@ -1,26 +1,23 @@
-#if canImport(Foundation)
-import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#else
-#error("Cannot import dependency `Date` from either OpenFoundation or Foundation.")
-#endif
-
 import HexStorage
 
 extension Configuration {
     static var `default`: Configuration = {
         let config = try! Configuration(connections: [.memory])
-        try! config.add(model: Example.self)
+        try! config.register(model: Example.self)
         return config
     }()
 }
 
 class Example: Model {
     
-    override class func migrate(from current: ModelMigration) -> HexStorage.Operation {
-        try! current.versioned(
-            .latest("Example",
+    override class var name: StaticString {
+        "example"
+    }
+    
+    override class func migrate(using builder: ModelMigrationBuilder) -> ModelOperation? {
+        try! builder
+            .versioned(
+                .latest("example",
                     .attribute(.string, named: "string"),
                     .attribute(.date, named: "date"),
                     .attribute(.float, named: "double"),

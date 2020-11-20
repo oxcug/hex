@@ -1,6 +1,6 @@
 
 enum MigrationError: Error {
-    case migrationFailed,
+    case mismatchingVersionsCount,
          multipleLatestModelMigrations,
          noLatestModelMigration,
          duplicateAttributeEntriesForSingleModel

@@ -1,3 +1,8 @@
+protocol AttributeProtocol {
+    
+    func metadata(with columnName: String) -> AttributeMetadata
+}
+
 public struct AttributeMetadata {
     
     public let name: String
@@ -5,11 +10,6 @@ public struct AttributeMetadata {
     public let valueType: AttributeValueType
     
     public let nullable: Bool
-}
-
-internal protocol AttributeProtocol {
-    
-    func metadata(with columnName: String) -> AttributeMetadata
 }
 
 public protocol AttributeValue {
