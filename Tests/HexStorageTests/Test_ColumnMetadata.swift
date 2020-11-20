@@ -1,10 +1,10 @@
 import XCTest
 import HexStorage
 
-class Test_ExampleModel_Table: StorageTestCase {
+class Test_ExampleModel_Schema: StorageTestCase {
     
     func testName() {
-        XCTAssertEqual(Example.tableName(for: config), (config.tableNamePrefix ?? "") + "Example")
+        XCTAssertEqual(String(describing: Example.name), "example")
     }
 }
 

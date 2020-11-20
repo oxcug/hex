@@ -1,34 +1,30 @@
-#if canImport(Foundation)
-import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#else
-#error("Cannot import dependency `UUID` from either OpenFoundation or Foundation.")
-#endif
-
 public protocol RawModel {
     
     var identifier: UUID { get }
     
     var config: Configuration { get }
     
-    static func tableName(for config: Configuration) -> String
+    static var name: StaticString { get }
     
     static func columns(for config: Configuration) -> [AttributeMetadata]
         
-    static func migrate(from current: ModelMigration) -> Operation
+    static func migrate(using current: ModelMigrationBuilder) -> ModelOperation?
 }
 
 open class Model: RawModel, Identifiable, Equatable {
     
     public typealias ID = UUID
     
-    public static func == (lhs: Model, rhs: Model) -> Bool {
-        return lhs.identifier == rhs.identifier
+    open class var name: StaticString {
+        fatalError("Sublcass must implement function `tableName(for:)`")
     }
     
-    open class func migrate(from current: ModelMigration) -> Operation {
-        fatalError("Subclass must implement migrations!")
+    open class func migrate(using current: ModelMigrationBuilder) -> ModelOperation? {
+        fatalError("Sublcass must implement function `migrate(using:)`")
+    }
+    
+    public static func == (lhs: Model, rhs: Model) -> Bool {
+        return lhs.identifier == rhs.identifier
     }
     
     public var id: UUID { identifier }
@@ -41,9 +37,6 @@ open class Model: RawModel, Identifiable, Equatable {
         self.config = config
     }
     
-    public static func tableName(for config: Configuration) -> String {
-        (config.tableNamePrefix ?? "") + String(describing: Self.self)
-    }
     
     public static func column(for config: Configuration, named: String) -> AttributeMetadata? {
         columns(for: config, filterByName: named).first

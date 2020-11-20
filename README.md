@@ -1,15 +1,27 @@
-
+<center>
 ![Icon](res/Hex%20Storage%20Icon.png)
 
 # Hex Storage
+</center>
 
-This library is designed to Application development by providing a simple and unified API for:
+https://trello.com/b/4htzSFYK/hex-storage
+
+This library is built for app development by providing a simple and unified API for:
 
 * Object Relationship Model Storage
 * Key Value Storage
-* **[🚧 WIP 🚧]** Block storage
+* **[🚧 WIP 🚧]** Block / Binary Storage
 
-With support for multiple backing technologies on multiple platforms.  
+With the following high-level features:
+
+* Local Data Persistence
+* Cloud Data Persistence
+* Peer To Peer Data Sharing
+* Public Data Sharing 
+* E2EE
+* HIPPA Compliance
+
+With support for multiple backing technologies on multiple platforms, this library is defined to dramatically reduce the amount of time spent picking and using ORMs, KVs, or Block / Binary oriented data.
 
 ## Driver/OS Support Matrix
 

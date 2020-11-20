@@ -1,17 +1,18 @@
 /// A data structure that contains information about the current state of a model, and, using a helper method
 /// like `versioned` creates the Operations necessary to migrate a model to it's latest schema.
-public struct ModelMigration {
+public struct ModelMigrationBuilder {
     
-    /// Sets the number of migrations that have been performed for this model in the past.
-    var numberOfPerformedMigrations: UInt? = nil
+    /// The number of migrations that have been performed for this model in the past (recorded by the `__migrations` table internally).
+    var numberOfPerformedMigrations: UInt?
     
-    var target: Model.Type
+    var model: RawModel.Type
     
     /// Constructs a `ModelMigrationBuilder` using the model schema definitions provided in the migrations parameter.
     /// Using the provided list of schema's, it automatically builds the necessary operations to migrate an older version of the model to the newest.
+    ///
     /// - Parameter schemas: A list of schema's that define each historical version of the model.
-    /// - Returns: A new migration builder.
-    public func versioned(_ schemas: ModelSchema...) throws -> Operation {
+    /// - Returns: A new `ModelMigration`.
+    public func versioned(_ schemas: ModelSchema...) throws -> ModelOperation? {
         ///
         /// Validate the `schemas` parameter:
         ///     - If multiple latest migrations found, throw `.multipleLatestModelMigrations`
@@ -23,14 +24,19 @@ public struct ModelMigration {
         }
         
         ///
-        /// Validate the number of recorded migrations:
-        ///     - If it is, we need to generate the operations for each inbetween schema defined in the provided list of versions.
-        ///     - Else, build a Operation that will create the table with the right schema from scratch.
-        guard let numberOfPerformedMigrations = numberOfPerformedMigrations, numberOfPerformedMigrations > 0 else {
-            return Operation(.create, .table, named: "")
+        /// Validate the number of perfomed migrations:
+        ///     - If there is no count (e.g `numberOfPerformedMigrations` is nil), then we have not created the table yet.
+        ///     - if the number of performed migrations is greater than the number provided then `throw` (the user is not providing all the schemas).
+        ///     - Otherwise generate the operations for each inbetween schema version defined in the provided by the caller.
+        guard let numberOfPerformedMigrations = numberOfPerformedMigrations else {
+            return ModelOperation.createTable(using: model, validating: latestSchema)
         }
-                
-        return Operation()
+        
+        guard numberOfPerformedMigrations < schemas.count else {
+            throw MigrationError.mismatchingVersionsCount
+        }
+        
+        return ModelOperation(model: model)
     }
     
     /// <#Description#>
@@ -38,7 +44,7 @@ public struct ModelMigration {
     ///   - schema: <#schema description#>
     ///   - to: <#to description#>
     /// - Returns: <#description#>
-    func generateOperation(from schema: ModelSchema, to: ModelSchema) -> Operation? {
+    func generateOperation(from schema: ModelSchema, to: ModelSchema) -> ModelOperation? {
         guard schema == to else { return nil }
         
         return nil

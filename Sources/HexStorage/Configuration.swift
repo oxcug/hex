@@ -1,20 +1,17 @@
-#if canImport(Foundation)
-import Foundation
-#elseif canImport(SwiftFoundation)
-import SwiftFoundation
-#else
-#error("Cannot import dependency`URL` from either OpenFoundation or Foundation.")
-#endif
-
 import SQLite3
+
+enum ConfigurationError: Error {
+    case duplicateRegistrationForModel
+    case unregisteredModel
+}
 
 private struct RelationalDatabase {
     
-    var sql: OpaquePointer
+    var connection: OpaquePointer
     
     var latestTableMigrationCountMap: [String: UInt?]
     
-    var pendingOperation: Operation? = nil
+    var pendingOperation: ModelOperation? = nil
 }
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
@@ -24,15 +21,11 @@ public enum Connection {
 
 public class Configuration {
     
-    public var tableNamePrefix: String?
-    
-    public var columnNamePrefix: String?
-    
     private var dbs = [RelationalDatabase]()
 
     private func executeQuery(_ db: RelationalDatabase, sql: String) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
-        let rc = sqlite3_exec(db.sql, sql, { (_, argc, argv, columnName) -> Int32 in
+        let rc = sqlite3_exec(db.connection, sql, { (_, argc, argv, columnName) -> Int32 in
             return 0
         }, nil, &errorMessage)
         
@@ -41,42 +34,64 @@ public class Configuration {
         }
     }
     
-    public func execute(operation: Operation) {
-//        let sql = operation.compile(model: <#T##RawModel#>, for: self)
-    }
-    
-    public func add(model: RawModel.Type...) throws {
-        try add(models: model)
-    }
-    
-    public func add(models: [RawModel.Type]) throws {
-        /// Convert list of models into a map (verifying that there are no duplicate names).
-        var modelMap = [String:RawModel.Type]()
-        for model in models {
-            guard modelMap[model.tableName(for: self)] == nil else {
-                fatalError("Found duplicate table for model: \(model).")
+    public func sync() throws {
+        for db in dbs {
+            guard let query = db.pendingOperation?.compile(for: self) else {
+                continue
             }
             
-            modelMap[model.tableName(for: self)] = model
+            try executeQuery(db, sql: query)
+        }
+    }
+    
+    public func append(_ _operation: ModelOperation) {
+        var op = _operation
+        let name = String(describing: op.model.name)
+        
+        for i in 0..<dbs.count {
+            /// Check if this model has been registered or not.
+            /// - If not, then throw.
+            guard let performedMigrationCount = dbs[i].latestTableMigrationCountMap[name] else {
+                preconditionFailure("Failed to find migration count for model named \(name).")
+            }
             
-            for db in dbs {
-                try executeQuery(db, sql: """
-                    """)
+            /// Check if the migration builder has an pending migration operation,
+            /// if so, wrap the appended operation in it. Otherwise, just set this as the db's pending op.
+            let builder = ModelMigrationBuilder(numberOfPerformedMigrations: performedMigrationCount ?? nil, model: op.model)
+            if let migration = op.model.migrate(using: builder) {
+                op.dependencies.append(migration)
+            }
+            
+            if var pendingOp =  dbs[i].pendingOperation {
+                pendingOp.dependencies.append(op)
+            } else {
+                dbs[i].pendingOperation = op
+            }
+        }
+    }
+    
+    public func register(model: RawModel.Type...) throws {
+        try register(models: model)
+    }
+    
+    public func register(models: [RawModel.Type]) throws {
+        /// Convert list of models into a map (verifying that there are no duplicate names).
+        for model in models {
+            let name = String(describing: model.name)
+            
+            /// Initially set the value of the migrationCount map for each db to a wrapped nil value unless it's already been retrieved from the db when the configuration was initialized.
+            /// This way, we don't worry about updating the
+            for i in 0..<dbs.count {
+                if !dbs[i].latestTableMigrationCountMap.contains(where: { $0.key == name }) {
+                    dbs[i].latestTableMigrationCountMap[name] = Optional<UInt>.init(nilLiteral: ())
+                }
             }
         }
     }
     
     /// Prepares a `StorageConfiguration` object to be used with the Storage Operation APIs.
-    /// - Parameter tableNamePrefix: A string to prefix all tables for all connections with. Defaults to the applications bundle identifier.
     /// - Parameter connections: An array of defined methods for connecting to one or more compatible storage types.
-    public required init(
-        tableNamePrefix: String? = ("\(Bundle.main.bundleIdentifier ?? "<unknown_bundle>")."),
-        columnNamePrefix: String? = nil,
-        connections: [Connection]) throws
-    {
-        self.tableNamePrefix = tableNamePrefix
-        self.columnNamePrefix = columnNamePrefix
-        
+    public required init(connections: [Connection]) throws {
         /// Initialize a new SQL Database connection for each one described by the caller.
         /// See `connections` parameter.
         dbs = connections.map {
@@ -96,7 +111,7 @@ public class Configuration {
                 fatalError("Failed to open database. Error (code: \(rc)): \(String(cString: sqlite3_errstr(rc))).")
             }
             
-            return RelationalDatabase(sql: handle, latestTableMigrationCountMap: [:])
+            return RelationalDatabase(connection: handle, latestTableMigrationCountMap: [:])
         }
         
         /// Last but not least, we prepare our new database connections by running the query below.
@@ -113,10 +128,10 @@ public class Configuration {
             let query = """
                 CREATE TABLE IF NOT EXISTS `__migrations` (
                   `modelName` VARCHAR(64) NOT NULL,
-                  `lastMigratedIndex` INTEGER NOT NULL default '0'
+                  `numberOfMigrationsPerformed` INTEGER NOT NULL default '0'
                 );
 
-                SELECT `modelName`, `lastMigratedIndex` FROM `__migrations`;
+                SELECT `modelName`, `numberOfMigrationsPerformed` FROM `__migrations`;
                 """
             try executeQuery($0, sql: query)
         }
@@ -126,7 +141,7 @@ public class Configuration {
     deinit {
         /// Now that we've prepared the database for the given models, we can now close out all our connections until they're needed again.
         dbs.forEach {
-            sqlite3_close($0.sql)
+            sqlite3_close($0.connection)
         }
     }
 }
