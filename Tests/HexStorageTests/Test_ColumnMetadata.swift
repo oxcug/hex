@@ -15,7 +15,7 @@ class Test_String_Column: BaseColumnStorageTestCase {
     func testString() {
         XCTAssertNotNil(metadata)
         XCTAssertEqual(metadata.name, columnName)
-        XCTAssertEqual(metadata.valueType, .string)
+        XCTAssertEqual(metadata.type, .string)
         XCTAssertFalse(metadata.nullable)
     }
 }
@@ -27,7 +27,7 @@ class Test_NullableString_Column: BaseColumnStorageTestCase {
     func testNullableString() {
         XCTAssertNotNil(metadata)
         XCTAssertEqual(metadata.name, columnName)
-        XCTAssertEqual(metadata.valueType, .string)
+        XCTAssertEqual(metadata.type, .string)
         XCTAssertTrue(metadata.nullable)
     }
 }

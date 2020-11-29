@@ -28,11 +28,11 @@ class Example: Model {
         )
     }
     
-    @Attribute var string: String
+    @Attribute(defaultValue: "<default>") var string: String
     
-    @Attribute var date: Date
+    @Attribute(defaultValue: .distantFuture) var date: Date
     
-    @Attribute var double: Double
+    @Attribute(defaultValue: 99) var double: Double
     
     @NullableAttribute var nullableString: String?
     

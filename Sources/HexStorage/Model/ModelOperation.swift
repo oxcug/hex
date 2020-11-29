@@ -21,37 +21,47 @@ extension AttributeValueType {
     }
 }
 
-public struct ModelOperation {
+extension AttributeProtocol {
+    var sql: String {
+        guard let sqlValue = value ?? defaultValue else {
+            return "NULL"
+        }
+        
+        return String(describing: sqlValue)
+    }
+}
+
+public protocol AnyModelOperation {
     
-    var model: RawModel.Type
+}
+
+public struct ModelOperation<Model: RawModel> {
     
     var type: OperationType? = nil
     
     var subject: OperationSubject? = nil
     
-    var values: [String:AttributeValue]? = nil
+    var values: [String:AttributeProtocol?]? = nil
 
-    var dependencies = [Self]()
+    var dependencies: [Self]
     
-    init(model: RawModel.Type) {
-        self.model = model
+    init() {
+        self.dependencies = []
     }
     
-    init(model: RawModel.Type,
-         _ type: OperationType,
+    init(_ type: OperationType,
          _ subject: OperationSubject,
-         values: [String: AttributeValue]? = nil,
+         values: [String: AttributeProtocol?]? = nil,
          dependencies: [Self]? = nil)
     {
-        self.model = model
         self.type = type
         self.subject = subject
         self.values = values
-        self.dependencies = dependencies
+        self.dependencies = dependencies ?? []
     }
     
-    static func createTable(using model: RawModel.Type, validating schema: ModelSchema) -> Self {
-        return Self(model: model, .create, .table)
+    static func createTable<T>(validating schema: ModelSchema) -> Self<T> {
+        return Self(.create, .table)
     }
     
     func compile(for configuration: Configuration) -> String {
@@ -65,18 +75,19 @@ public struct ModelOperation {
             return out
         }
         
+        
         switch type {
         case .create:
             switch subject {
             case .table:
-                out = "CREATE TABLE `\(model.name)`("
+                out = "CREATE TABLE `\(Model.name)` ("
                 
-                let cols = model.columns(for: configuration)
+                let cols = Model.columns()
                 for i in 0..<cols.count {
                     let col = cols[i]
-                    out += "\t`\(col.name)` \(col.valueType.sql)"
+                    out += "\t`\(col.name)` \(col.type.sql)"
                     
-                    if col.nullable {
+                    if !col.nullable {
                         out += " NOT NULL"
                     }
                     
@@ -90,10 +101,37 @@ public struct ModelOperation {
                 
                 out += ");\n"
             case .row:
-                out = "INSERT () VALUES ()"
+                guard let compactValues = values?.compactMapValues({ $0 }) else {
+                    fatalError("Performing create but didn't provide values.")
+                }
+                
+                let keys = compactValues.keys
+                
+                out += """
+                    INSERT INTO `\(model.name)` (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
+                    VALUES (\(keys.map { "'\(compactValues[$0]!.sql)'" }.joined(separator: ", ")));\n
+                    """
             }
+        case .read:
+            switch subject {
+            case .row:
+                guard let compactValues = values?.compactMapValues({ $0 }) else {
+                    fatalError("Performing create but didn't provide values.")
+                }
+                
+                out += """
+                    SELECT *
+                    FROM `\(model.name)`
+                    WHERE \(compactValues.map { "`\($0.key)` = '\($0.value.sql)'"  });\n
+                    """
+            case .table:
+                out += """
+                    SELECT * FROM `\(model.name)`;\n
+                    """
+
+            }
+        // TODO: Implement other operation styles.
         case .update: fallthrough
-        case .read: fallthrough // TODO: Implement other operation styles.
         case .delete: out = ""
         }
         

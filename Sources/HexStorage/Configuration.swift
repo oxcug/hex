@@ -14,34 +14,112 @@ private struct RelationalDatabase {
     var pendingOperation: ModelOperation? = nil
 }
 
+class Transaction {
+    
+    var result: (([String:String]) -> Void)
+    
+    init(result: @escaping (([String:String]) -> Void)) {
+        self.result = result
+    }
+}
+
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
 public enum Connection {
     case memory, file(url: URL)
 }
 
+import Foundation
+
+
 public class Configuration {
     
     private var dbs = [RelationalDatabase]()
 
-    private func executeQuery(_ db: RelationalDatabase, sql: String) throws {
+    private func executeQuery(_ db: inout RelationalDatabase, sql: String, block: @escaping (([String:String]) -> Void)) throws {
+        // TODO: @ox Probably don't need the @escaping syntax here for `Transaction`.
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
-        let rc = sqlite3_exec(db.connection, sql, { (_, argc, argv, columnName) -> Int32 in
+        var transaction = Transaction(result: block)
+        
+        let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
+            guard let trans = pointer?.assumingMemoryBound(to: Transaction.self).pointee else {
+                fatalError("Param is not of type `Transaction`!")
+            }
+            
+            var results = [String:String]()
+            for i in 0..<Int(argc) {
+                guard let cBuffer = argv?[Int(i)], let cName = columnName?[i] else {
+                    return SQLITE_ABORT
+                }
+                
+                let column = String(cString: cName)
+                let value = String(cString: cBuffer)
+                results[column] = value
+            }
+            
+            trans.result(results)
             return 0
-        }, nil, &errorMessage)
+        }, &transaction, &errorMessage)
         
         guard rc == SQLITE_OK, errorMessage == nil else {
             fatalError("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
         }
+        
+        db.pendingOperation = nil
     }
     
     public func sync() throws {
-        for db in dbs {
-            guard let query = db.pendingOperation?.compile(for: self) else {
+        try _sync(Model.self)
+    }
+    
+    @discardableResult
+    public func sync<T: RawModel>() throws -> [T] {
+        try _sync(T.self)
+    }
+    
+    @discardableResult
+    public func _sync<T: RawModel>(_ : T.Type) throws -> [T] {
+        var aggregate = [T]()
+        for i in 0..<dbs.count {
+            guard let query = dbs[i].pendingOperation?.compile(for: self) else {
                 continue
             }
             
-            try executeQuery(db, sql: query)
+            try executeQuery(&dbs[i], sql: query) { result in
+                var parsedDictionary = [String: AttributeValue](minimumCapacity: result.count)
+                
+                result.forEach { (k, v) in
+                    guard let column = T.column(named: k) else { return }
+                    let value: AttributeValue
+
+                    switch column.type {
+                    case .date: value = Date(sql: v)
+                    case .float: value = Double(sql: v)
+                    case .integer: value = Int(sql: v)
+                    case .string: value = v
+                    }
+
+                    parsedDictionary[k] = value
+                }
+                
+                let encoder = PropertyListEncoder()
+//                encoder.encode(parsedDictionary)
+
+//                encoder.decode(T.self, from: Data(result))
+                
+//                out.append()
+//                aggregate
+            }
+            
+//            aggregate.append(contentsOf: out.map {
+////                var simple = SimpleCoder()
+//                var coder = JSONEncoder()
+//
+
+//                return try! T(from: simple)
+//            })
         }
+        
+        return aggregate
     }
     
     public func append(_ _operation: ModelOperation) {
@@ -52,7 +130,7 @@ public class Configuration {
             /// Check if this model has been registered or not.
             /// - If not, then throw.
             guard let performedMigrationCount = dbs[i].latestTableMigrationCountMap[name] else {
-                preconditionFailure("Failed to find migration count for model named \(name).")
+                preconditionFailure("Failed to find migration count for model named \(name). Was this model registered?")
             }
             
             /// Check if the migration builder has an pending migration operation,
@@ -60,6 +138,7 @@ public class Configuration {
             let builder = ModelMigrationBuilder(numberOfPerformedMigrations: performedMigrationCount ?? nil, model: op.model)
             if let migration = op.model.migrate(using: builder) {
                 op.dependencies.append(migration)
+                dbs[i].latestTableMigrationCountMap[name] = (performedMigrationCount ?? 0) + 1
             }
             
             if var pendingOp =  dbs[i].pendingOperation {
@@ -124,7 +203,7 @@ public class Configuration {
         ///
         /// By validating those items (at the cost of some overhead) we further the goals of this library by gaining
         /// significant ease of use benefits between the `Model` class and the `migrations` pattern.
-        try dbs.forEach {
+        for i in 0..<dbs.count {
             let query = """
                 CREATE TABLE IF NOT EXISTS `__migrations` (
                   `modelName` VARCHAR(64) NOT NULL,
@@ -133,7 +212,9 @@ public class Configuration {
 
                 SELECT `modelName`, `numberOfMigrationsPerformed` FROM `__migrations`;
                 """
-            try executeQuery($0, sql: query)
+            try executeQuery(&dbs[i], sql: query) { result in
+                print(result)
+            }
         }
     }
     

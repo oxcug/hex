@@ -2,17 +2,24 @@
 @propertyWrapper public struct NullableAttribute<T: AttributeValue>: AttributeProtocol {
     
     public var cachedValue: T?
+        
+    var defaultValue: AttributeValue?
+    
+    var value: AttributeValue? {
+        cachedValue
+    }
 
     public var wrappedValue: Optional<T> {
         get { cachedValue }
         set {  }
     }
         
-    public init(cachedValue: T? = nil) {
-        self.cachedValue = cachedValue
+    public init(defaultValue: T? = nil) {
+        self.defaultValue = defaultValue
+        self.cachedValue = defaultValue
     }
     
     func metadata(with attributeName: String) -> AttributeMetadata {
-        return .init(name: attributeName, valueType: T.valueType, nullable: true)
+        return .init(name: attributeName, type: T.type, nullable: true)
     }
 }

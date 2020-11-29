@@ -2,25 +2,28 @@ public protocol RawModel {
     
     var identifier: UUID { get }
     
-    var config: Configuration { get }
+    init()
     
     static var name: StaticString { get }
     
-    static func columns(for config: Configuration) -> [AttributeMetadata]
-        
-    static func migrate(using current: ModelMigrationBuilder) -> ModelOperation?
+    static func columns() -> [AttributeMetadata]
+    
+    static func column(named: String) -> AttributeMetadata?
+    
+    static func migrate(using current: ModelMigrationBuilder) -> AnyModelOperation?
 }
 
-open class Model: RawModel, Identifiable, Equatable {
+open class Model: RawModel, Codable, Identifiable, Equatable {
     
     public typealias ID = UUID
     
     open class var name: StaticString {
-        fatalError("Sublcass must implement function `tableName(for:)`")
+        
+        preconditionFailure("Sublcass must implement class getter `name`")
     }
     
-    open class func migrate(using current: ModelMigrationBuilder) -> ModelOperation? {
-        fatalError("Sublcass must implement function `migrate(using:)`")
+    open class func migrate(using current: ModelMigrationBuilder) -> AnyModelOperation? {
+        preconditionFailure("Sublcass must implement function `migrate(using:)`")
     }
     
     public static func == (lhs: Model, rhs: Model) -> Bool {
@@ -31,23 +34,20 @@ open class Model: RawModel, Identifiable, Equatable {
     
     public private(set) var identifier = UUID()
     
-    public var config: Configuration
-    
-    public required init(for config: Configuration) {
-        self.config = config
+    public required init() {
+        
     }
     
-    
-    public static func column(for config: Configuration, named: String) -> AttributeMetadata? {
-        columns(for: config, filterByName: named).first
+    public static func columns() -> [AttributeMetadata] {
+        columns(filterByName: nil)
     }
     
-    public static func columns(for config: Configuration) -> [AttributeMetadata] {
-        columns(for: config, filterByName: nil)
+    public static func column(named: String) -> AttributeMetadata? {
+        columns(filterByName: named).first
     }
     
-    static func columns(for config: Configuration, filterByName: String? = nil) -> [AttributeMetadata] {
-        let mirror = Mirror(reflecting: Self.init(for: config))
+    static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
+        let mirror = Mirror(reflecting: Self.init())
         var cols = [AttributeMetadata]()
         
         for child in mirror.children {

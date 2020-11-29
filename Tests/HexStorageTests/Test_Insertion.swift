@@ -3,17 +3,21 @@ import HexStorage
 
 class Test_ModelOperations: XCTestCase {
     
-    let model = Example(for: .default)
+    let model = Example()
     
     func testUpsert() {
         XCTAssertNoThrow(
-            model
+            try model
                 .upsert()
                 .commit(using: .default)
+                .sync()
         )
-        
-//        model.operationBuilder
-//            .find(.all)
-//            .commit(using: .default)
+
+        XCTAssertNoThrow(
+            try Example
+                .findAll()
+                .commit(using: .default)
+                .sync()
+        )
     }
 }
