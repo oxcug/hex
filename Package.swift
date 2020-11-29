@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "HexStorage",
+    name: "hex-storage",
     products: [
         .library(name: "HexStorage", targets: ["HexStorage"]),
     ],
