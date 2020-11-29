@@ -32,11 +32,11 @@ public struct ModelMigrationBuilder {
             return ModelOperation.createTable(using: model, validating: latestSchema)
         }
         
-        guard numberOfPerformedMigrations < schemas.count else {
+        guard numberOfPerformedMigrations <= schemas.count else {
             throw MigrationError.mismatchingVersionsCount
         }
         
-        return ModelOperation(model: model)
+        return nil
     }
     
     /// <#Description#>
