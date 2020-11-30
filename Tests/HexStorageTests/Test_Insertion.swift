@@ -13,11 +13,11 @@ class Test_ModelOperations: XCTestCase {
                 .sync()
         )
 
-        XCTAssertNoThrow(
-            try Example
-                .findAll()
-                .commit(using: .default)
-                .sync()
-        )
+        let out: [Example] = try? Example
+            .findAll()
+            .commit(using: .default)
+            .sync()
+        
+        XCTAssertEqual(out.count, 1)
     }
 }

@@ -31,11 +31,14 @@ extension AttributeProtocol {
     }
 }
 
-public protocol AnyModelOperation {
+protocol AnyModelOperation {
     
+    var dependencies: [AnyModelOperation] { get set }
+    
+    func compile(for configuration: Configuration) -> String
 }
 
-public struct ModelOperation<Model: RawModel> {
+public struct ModelOperation<Model: RawModel>: AnyModelOperation {
     
     var type: OperationType? = nil
     
@@ -43,7 +46,7 @@ public struct ModelOperation<Model: RawModel> {
     
     var values: [String:AttributeProtocol?]? = nil
 
-    var dependencies: [Self]
+    var dependencies: [AnyModelOperation]
     
     init() {
         self.dependencies = []
@@ -60,7 +63,7 @@ public struct ModelOperation<Model: RawModel> {
         self.dependencies = dependencies ?? []
     }
     
-    static func createTable<T>(validating schema: ModelSchema) -> Self<T> {
+    static func createTable(validating schema: ModelSchema) -> Self {
         return Self(.create, .table)
     }
     
@@ -108,7 +111,7 @@ public struct ModelOperation<Model: RawModel> {
                 let keys = compactValues.keys
                 
                 out += """
-                    INSERT INTO `\(model.name)` (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
+                    INSERT INTO `\(Model.name)` (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
                     VALUES (\(keys.map { "'\(compactValues[$0]!.sql)'" }.joined(separator: ", ")));\n
                     """
             }
@@ -121,12 +124,12 @@ public struct ModelOperation<Model: RawModel> {
                 
                 out += """
                     SELECT *
-                    FROM `\(model.name)`
+                    FROM `\(Model.name)`
                     WHERE \(compactValues.map { "`\($0.key)` = '\($0.value.sql)'"  });\n
                     """
             case .table:
                 out += """
-                    SELECT * FROM `\(model.name)`;\n
+                    SELECT * FROM `\(Model.name)`;\n
                     """
 
             }
@@ -140,8 +143,35 @@ public struct ModelOperation<Model: RawModel> {
 
     /// Adds this operation to the configuration's operation buffer to be executed at the next `push`.
     /// - Parameter configuration: The target configuration to perform this operation on.
-    @discardableResult public func commit(using configuration: Configuration) -> Configuration {
-        configuration.append(self)
-        return configuration
+    @discardableResult public func commit(using configuration: Configuration) -> Transaction<Model> {
+        var op = _operation
+        let name = String(describing: Model.name)
+        
+        for i in 0..<dbs.count {
+            /// Check if this model has been registered or not.
+            /// - If not, then throw.
+            guard let performedMigrationCount = dbs[i].latestTableMigrationCountMap[name] else {
+                preconditionFailure("Failed to find migration count for model named \(name). Was this model registered?")
+            }
+            
+            /// Check if the migration builder has an pending migration operation,
+            /// if so, wrap the appended operation in it. Otherwise, just set this as the db's pending op.
+            let builder = ModelMigrationBuilder<Model>(numberOfPerformedMigrations: performedMigrationCount ?? nil)
+            if let migration = Model.migrate(using: builder) {
+                op.dependencies.append(migration)
+                dbs[i].latestTableMigrationCountMap[name] = (performedMigrationCount ?? 0) + 1
+            }
+            
+            if var pendingOp =  dbs[i].pendingOperation {
+                pendingOp.dependencies.append(op)
+            } else {
+                dbs[i].pendingOperation = op
+            }
+        }
+        
+        return Transaction<Model>(result: {
+            
+        })
+
     }
 }

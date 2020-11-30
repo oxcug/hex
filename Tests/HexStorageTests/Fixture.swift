@@ -14,8 +14,8 @@ class Example: Model {
         "example"
     }
     
-    override class func migrate(using builder: ModelMigrationBuilder) -> ModelOperation? {
-        try! builder
+    override class func migrate<T>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>? where T : RawModel {
+        try! current
             .versioned(
                 .latest("example",
                     .attribute(.string, named: "string"),

@@ -11,15 +11,63 @@ private struct RelationalDatabase {
     
     var latestTableMigrationCountMap: [String: UInt?]
     
-    var pendingOperation: ModelOperation? = nil
+    var pendingOperation: AnyModelOperation? = nil
 }
 
-class Transaction {
+public class Transaction<Model: RawModel> {
+    
+    weak var config: Configuration?
     
     var result: (([String:String]) -> Void)
     
     init(result: @escaping (([String:String]) -> Void)) {
         self.result = result
+    }
+        
+    @discardableResult
+    public func sync() throws -> [Model] {
+        var aggregate = [Model]()
+//        for i in 0..<(config?.dbs.count ?? 0) {
+//            guard let query = dbs[i].pendingOperation?.compile(for: self) else {
+//                continue
+//            }
+//
+//            try executeQuery(&dbs[i], sql: query) { result in
+//                var parsedDictionary = [String: AttributeValue](minimumCapacity: result.count)
+//
+//                result.forEach { (k, v) in
+//                    guard let column = T.column(named: k) else { return }
+//                    let value: AttributeValue
+//
+//                    switch column.type {
+//                    case .date: value = Date(sql: v)
+//                    case .float: value = Double(sql: v)
+//                    case .integer: value = Int(sql: v)
+//                    case .string: value = v
+//                    }
+//
+//                    parsedDictionary[k] = value
+//                }
+//
+//                let encoder = PropertyListEncoder()
+////                encoder.encode(parsedDictionary)
+//
+////                encoder.decode(T.self, from: Data(result))
+//
+////                out.append()
+////                aggregate
+//            }
+//
+////            aggregate.append(contentsOf: out.map {
+//////                var simple = SimpleCoder()
+////                var coder = JSONEncoder()
+////
+//
+////                return try! T(from: simple)
+////            })
+//        }
+        
+        return aggregate
     }
 }
 
@@ -28,21 +76,19 @@ public enum Connection {
     case memory, file(url: URL)
 }
 
-import Foundation
-
-
 public class Configuration {
     
-    private var dbs = [RelationalDatabase]()
+    fileprivate var dbs = [RelationalDatabase]()
+    
+    private typealias ExecuteQueryBlock = (([String:String]) -> Void)
 
-    private func executeQuery(_ db: inout RelationalDatabase, sql: String, block: @escaping (([String:String]) -> Void)) throws {
-        // TODO: @ox Probably don't need the @escaping syntax here for `Transaction`.
+    private func executeQuery(_ db: inout RelationalDatabase, sql: String, block: ExecuteQueryBlock) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
-        var transaction = Transaction(result: block)
+        var blockCopy = block
         
         let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
-            guard let trans = pointer?.assumingMemoryBound(to: Transaction.self).pointee else {
-                fatalError("Param is not of type `Transaction`!")
+            guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
+                fatalError("Param is not of type `ExecuteQueryBlock`!")
             }
             
             var results = [String:String]()
@@ -56,9 +102,9 @@ public class Configuration {
                 results[column] = value
             }
             
-            trans.result(results)
+            result(results)
             return 0
-        }, &transaction, &errorMessage)
+        }, &blockCopy, &errorMessage)
         
         guard rc == SQLITE_OK, errorMessage == nil else {
             fatalError("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
@@ -66,89 +112,7 @@ public class Configuration {
         
         db.pendingOperation = nil
     }
-    
-    public func sync() throws {
-        try _sync(Model.self)
-    }
-    
-    @discardableResult
-    public func sync<T: RawModel>() throws -> [T] {
-        try _sync(T.self)
-    }
-    
-    @discardableResult
-    public func _sync<T: RawModel>(_ : T.Type) throws -> [T] {
-        var aggregate = [T]()
-        for i in 0..<dbs.count {
-            guard let query = dbs[i].pendingOperation?.compile(for: self) else {
-                continue
-            }
-            
-            try executeQuery(&dbs[i], sql: query) { result in
-                var parsedDictionary = [String: AttributeValue](minimumCapacity: result.count)
-                
-                result.forEach { (k, v) in
-                    guard let column = T.column(named: k) else { return }
-                    let value: AttributeValue
 
-                    switch column.type {
-                    case .date: value = Date(sql: v)
-                    case .float: value = Double(sql: v)
-                    case .integer: value = Int(sql: v)
-                    case .string: value = v
-                    }
-
-                    parsedDictionary[k] = value
-                }
-                
-                let encoder = PropertyListEncoder()
-//                encoder.encode(parsedDictionary)
-
-//                encoder.decode(T.self, from: Data(result))
-                
-//                out.append()
-//                aggregate
-            }
-            
-//            aggregate.append(contentsOf: out.map {
-////                var simple = SimpleCoder()
-//                var coder = JSONEncoder()
-//
-
-//                return try! T(from: simple)
-//            })
-        }
-        
-        return aggregate
-    }
-    
-    public func append(_ _operation: ModelOperation) {
-        var op = _operation
-        let name = String(describing: op.model.name)
-        
-        for i in 0..<dbs.count {
-            /// Check if this model has been registered or not.
-            /// - If not, then throw.
-            guard let performedMigrationCount = dbs[i].latestTableMigrationCountMap[name] else {
-                preconditionFailure("Failed to find migration count for model named \(name). Was this model registered?")
-            }
-            
-            /// Check if the migration builder has an pending migration operation,
-            /// if so, wrap the appended operation in it. Otherwise, just set this as the db's pending op.
-            let builder = ModelMigrationBuilder(numberOfPerformedMigrations: performedMigrationCount ?? nil, model: op.model)
-            if let migration = op.model.migrate(using: builder) {
-                op.dependencies.append(migration)
-                dbs[i].latestTableMigrationCountMap[name] = (performedMigrationCount ?? 0) + 1
-            }
-            
-            if var pendingOp =  dbs[i].pendingOperation {
-                pendingOp.dependencies.append(op)
-            } else {
-                dbs[i].pendingOperation = op
-            }
-        }
-    }
-    
     public func register(model: RawModel.Type...) throws {
         try register(models: model)
     }
@@ -212,7 +176,7 @@ public class Configuration {
 
                 SELECT `modelName`, `numberOfMigrationsPerformed` FROM `__migrations`;
                 """
-            try executeQuery(&dbs[i], sql: query) { result in
+            try executeQuery(&dbs[i], sql: query)  { result in
                 print(result)
             }
         }
