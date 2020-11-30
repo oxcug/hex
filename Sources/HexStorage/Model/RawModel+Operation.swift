@@ -27,15 +27,15 @@ public extension RawModel {
             values[col.name] = value
         }
         
-        return ModelOperation(model: Self.self, .create, .row, values: values)
+        return ModelOperation(.create, .row, values: values)
     }
     
     static func findAll() -> ModelOperation<Self> {
-        ModelOperation(model: Self.self, .read, .table)
+        ModelOperation(.read, .table)
     }
     
     /// Deletes this model from the .
     func delete() -> ModelOperation<Self> {
-        return ModelOperation(model: Self.self, .delete, .row)
+        return ModelOperation(.delete, .row)
     }
 }

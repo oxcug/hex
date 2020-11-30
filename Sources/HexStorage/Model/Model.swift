@@ -10,10 +10,14 @@ public protocol RawModel {
     
     static func column(named: String) -> AttributeMetadata?
     
-    static func migrate(using current: ModelMigrationBuilder) -> AnyModelOperation?
+    static func migrate<T: RawModel>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>?
 }
 
 open class Model: RawModel, Codable, Identifiable, Equatable {
+    
+    open class func migrate<T>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>? where T : RawModel {
+        preconditionFailure("Subclass must implement class `migrate` function.")
+    }
     
     public typealias ID = UUID
     
@@ -22,10 +26,7 @@ open class Model: RawModel, Codable, Identifiable, Equatable {
         preconditionFailure("Sublcass must implement class getter `name`")
     }
     
-    open class func migrate(using current: ModelMigrationBuilder) -> AnyModelOperation? {
-        preconditionFailure("Sublcass must implement function `migrate(using:)`")
-    }
-    
+
     public static func == (lhs: Model, rhs: Model) -> Bool {
         return lhs.identifier == rhs.identifier
     }
