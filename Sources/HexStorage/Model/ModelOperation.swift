@@ -17,6 +17,7 @@ extension AttributeValueType {
         case .float: return "REAL"
         case .integer: return "INTEGER"
         case .string: return "TEXT"
+        case .uuid: return "CHAR(36)"
         }
     }
 }
@@ -131,7 +132,6 @@ public struct ModelOperation<Model: RawModel>: AnyModelOperation {
                 out += """
                     SELECT * FROM `\(Model.name)`;\n
                     """
-
             }
         // TODO: Implement other operation styles.
         case .update: fallthrough
@@ -144,34 +144,30 @@ public struct ModelOperation<Model: RawModel>: AnyModelOperation {
     /// Adds this operation to the configuration's operation buffer to be executed at the next `push`.
     /// - Parameter configuration: The target configuration to perform this operation on.
     @discardableResult public func commit(using configuration: Configuration) -> Transaction<Model> {
-        var op = _operation
-        let name = String(describing: Model.name)
-        
-        for i in 0..<dbs.count {
+        for i in 0..<configuration.dbs.count {
             /// Check if this model has been registered or not.
             /// - If not, then throw.
-            guard let performedMigrationCount = dbs[i].latestTableMigrationCountMap[name] else {
-                preconditionFailure("Failed to find migration count for model named \(name). Was this model registered?")
+            guard let performedMigrationCount = configuration.dbs[i].latestTableMigrationCountMap[Model.name.description] else {
+                preconditionFailure("Failed to find migration count for model named \(Model.name). Was this model registered?")
             }
             
             /// Check if the migration builder has an pending migration operation,
             /// if so, wrap the appended operation in it. Otherwise, just set this as the db's pending op.
+            var resultingOp = self
+            
             let builder = ModelMigrationBuilder<Model>(numberOfPerformedMigrations: performedMigrationCount ?? nil)
             if let migration = Model.migrate(using: builder) {
-                op.dependencies.append(migration)
-                dbs[i].latestTableMigrationCountMap[name] = (performedMigrationCount ?? 0) + 1
+                resultingOp.dependencies.append(migration)
+                configuration.dbs[i].latestTableMigrationCountMap[Model.name.description] = (performedMigrationCount ?? 0) + 1
             }
             
-            if var pendingOp =  dbs[i].pendingOperation {
-                pendingOp.dependencies.append(op)
+            if var pendingOp =  configuration.dbs[i].pendingOperation {
+                pendingOp.dependencies.append(resultingOp)
             } else {
-                dbs[i].pendingOperation = op
+                configuration.dbs[i].pendingOperation = resultingOp
             }
         }
         
-        return Transaction<Model>(result: {
-            
-        })
-
+        return Transaction<Model>(config: configuration)
     }
 }

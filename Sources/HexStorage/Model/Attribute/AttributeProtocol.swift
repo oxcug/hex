@@ -1,22 +1,24 @@
 protocol AttributeProtocol {
     
-    func metadata(with columnName: String) -> AttributeMetadata
+    func metadata<M: RawModel>(with mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata<M>?
         
     var defaultValue: AttributeValue? { get }
     
     var value: AttributeValue? { get }
 }
 
-public struct AttributeMetadata {
+public struct AttributeMetadata<M: RawModel> {
     
     public let name: String
     
     public let type: AttributeValueType
     
     public let nullable: Bool
+    
+    public let keyPath: PartialKeyPath<M>
 }
 
-public protocol AttributeValue {
+public protocol AttributeValue: Codable {
     
     static var type: AttributeValueType { get }
     
@@ -24,5 +26,5 @@ public protocol AttributeValue {
 }
 
 public enum AttributeValueType {
-   case string, integer, float, date
+   case string, integer, float, date, uuid
 }

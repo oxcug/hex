@@ -19,7 +19,10 @@
         self.cachedValue = defaultValue
     }
     
-    func metadata(with attributeName: String) -> AttributeMetadata {
-        return .init(name: attributeName, type: T.type, nullable: true)
+    func metadata<M: RawModel>(with mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata<M>? {
+        // TODO: #ifdef out for !DEBUG.
+        /// @see caller `Model.columns(filterByName:) ` for more info.
+        guard let label = descendent.label else { return nil }
+        return AttributeMetadata(name: label, type: T.type, nullable: false, keyPath: \M.[checkedMirrorDescendant: label] as PartialKeyPath<M>)
     }
 }
