@@ -1,10 +1,10 @@
-extension Double: AttributeValue {
-
+extension UUID: AttributeValue {
+    
     public static var type: AttributeValueType {
-        .float
+        .uuid
     }
     
     public init(sql: String) {
-        self = Double(sql)!
+        self = UUID(uuidString: sql)!
     }
 }
