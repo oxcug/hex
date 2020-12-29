@@ -19,10 +19,9 @@
         self._value = nil
     }
 
-    func metadata(with mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata? {
+    func metadata(using label: String, mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata? {
         // TODO: #ifdef out for !DEBUG.
         /// @see caller `Model.columns(filterByName:) ` for more info.
-        guard let label = descendent.label else { return nil }
         return AttributeMetadata(name: label, type: T.type, nullable: false)
     }
 }

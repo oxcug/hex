@@ -10,9 +10,9 @@ public protocol RawModel: Codable {
     
     static var name: StaticString { get }
     
-    static func columns<M: RawModel>() -> [AttributeMetadata<M>]
+    static func columns() -> [AttributeMetadata]
     
-    static func column<M: RawModel>(named: String) -> AttributeMetadata<M>?
+    static func column(named: String) -> AttributeMetadata?
     
     static func migrate<M: RawModel>(using current: ModelMigrationBuilder<M>) -> ModelOperation<M>?
 }
@@ -41,19 +41,17 @@ open class Model: RawModel, Codable {
         return columns(filterByName: named).first
     }
     
-    static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
-        let mirror = Mirror(reflecting: Self.init())
+    private static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
+        let mirror = Mirror(reflecting: Self())
         var cols = [AttributeMetadata]()
         
         for child in mirror.children {
-            if child.label?.hasPrefix("_") ?? false,
-                let name = child.label?.dropFirst(1),
-                filterByName == nil || name == filterByName! {
-                
-                if let out = child.value as? AttributeProtocol, let md = out.metadata(with: mirror, descendent: child) {
-                    cols.append(md)
-                }
-            }
+            guard let name = child.label, name.hasPrefix("_"), filterByName == nil || ("_" + filterByName! == name) else { continue }
+            
+            let label = String(name.dropFirst(1))
+            if let out = child.value as? AttributeProtocol, let md = out.metadata(using: label, mirror: mirror, descendent: child) {
+                cols.append(md)
+            }   
         }
         
         return cols
