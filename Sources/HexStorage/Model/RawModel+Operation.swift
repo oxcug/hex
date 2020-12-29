@@ -1,4 +1,4 @@
-import SQLite3
+import CSQLite3
 
 public extension RawModel {
         

@@ -1,74 +1,23 @@
-import SQLite3
+import CSQLite3
+
+#if os(WASI)
+import SwiftFoundation
+#else
+import Foundation
+#endif
 
 enum ConfigurationError: Error {
     case duplicateRegistrationForModel
     case unregisteredModel
 }
 
-private struct RelationalDatabase {
+struct RelationalDatabase {
     
     var connection: OpaquePointer
     
     var latestTableMigrationCountMap: [String: UInt?]
     
     var pendingOperation: AnyModelOperation? = nil
-}
-
-public class Transaction<Model: RawModel> {
-    
-    weak var config: Configuration?
-    
-    var result: (([String:String]) -> Void)
-    
-    init(result: @escaping (([String:String]) -> Void)) {
-        self.result = result
-    }
-        
-    @discardableResult
-    public func sync() throws -> [Model] {
-        var aggregate = [Model]()
-//        for i in 0..<(config?.dbs.count ?? 0) {
-//            guard let query = dbs[i].pendingOperation?.compile(for: self) else {
-//                continue
-//            }
-//
-//            try executeQuery(&dbs[i], sql: query) { result in
-//                var parsedDictionary = [String: AttributeValue](minimumCapacity: result.count)
-//
-//                result.forEach { (k, v) in
-//                    guard let column = T.column(named: k) else { return }
-//                    let value: AttributeValue
-//
-//                    switch column.type {
-//                    case .date: value = Date(sql: v)
-//                    case .float: value = Double(sql: v)
-//                    case .integer: value = Int(sql: v)
-//                    case .string: value = v
-//                    }
-//
-//                    parsedDictionary[k] = value
-//                }
-//
-//                let encoder = PropertyListEncoder()
-////                encoder.encode(parsedDictionary)
-//
-////                encoder.decode(T.self, from: Data(result))
-//
-////                out.append()
-////                aggregate
-//            }
-//
-////            aggregate.append(contentsOf: out.map {
-//////                var simple = SimpleCoder()
-////                var coder = JSONEncoder()
-////
-//
-////                return try! T(from: simple)
-////            })
-//        }
-        
-        return aggregate
-    }
 }
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
@@ -78,14 +27,14 @@ public enum Connection {
 
 public class Configuration {
     
-    fileprivate var dbs = [RelationalDatabase]()
+    var dbs: [RelationalDatabase]
     
-    private typealias ExecuteQueryBlock = (([String:String]) -> Void)
+    typealias ExecuteQueryBlock = ([String:String]) -> Void
 
-    private func executeQuery(_ db: inout RelationalDatabase, sql: String, block: ExecuteQueryBlock) throws {
+    func executeQuery(_ db: inout RelationalDatabase, sql: String, block: ExecuteQueryBlock) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
         var blockCopy = block
-        
+
         let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
             guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
                 fatalError("Param is not of type `ExecuteQueryBlock`!")

@@ -1,22 +1,26 @@
+import Foundation
 import HexStorage
 
 extension Configuration {
     static var `default`: Configuration = {
         let config = try! Configuration(connections: [.memory])
-        try! config.register(model: Example.self)
+        try! config.register(model: ExampleModel.self)
         return config
     }()
 }
 
-class Example: Model {
-    
+class ExampleModel: Model, Equatable {
+
     override class var name: StaticString {
         "example"
     }
+
+    static func ==(lhs: ExampleModel, rhs: ExampleModel) -> Bool {
+        return lhs.string == rhs.string
+    }
     
     override class func migrate<T>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>? where T : RawModel {
-        try! current
-            .versioned(
+        try! current.versioned(
                 .latest("example",
                     .attribute(.string, named: "string"),
                     .attribute(.date, named: "date"),
@@ -28,7 +32,7 @@ class Example: Model {
         )
     }
     
-    @Attribute(defaultValue: "<default>") var string: String
+    @Attribute(defaultValue: "<Default Value>") var string: String
     
     @Attribute(defaultValue: .distantFuture) var date: Date
     

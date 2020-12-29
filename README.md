@@ -1,5 +1,5 @@
 <center>
-![Icon](res/Hex%20Storage%20Icon.png)
+![Icon](Meta/Icon.png)
 
 # Hex Storage
 </center>
@@ -27,7 +27,7 @@ With support for multiple backing technologies on multiple platforms, this libra
 
 |         	| SQLite 	   | IndexDB 		| User Defaults  |  File System  |
 |---------	|:------:	   |:-------:		|:-------------: |:-------------:|
-| wasm    	|    X    	|    🚧    	|        X       |      TBD
+| WASI    	|    N/A    	|    🚧    	|        N/A       |      TBD
 | Linux   	|    🚧    	|     X    	|        X       |      TBD
 | Windows 	|    🚧   	|     X   	|        X       |      TBD
 | watchOS 	|    ✅   	|     X    	|       ✅       |      TBD
@@ -83,7 +83,7 @@ import HexStorage
 
 class Settings {
 
-    @KeyValue var
+    @KeyValue var shouldDisplayOnboarding: Bool
     
 }
 

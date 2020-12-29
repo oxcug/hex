@@ -17,7 +17,7 @@ public struct ModelSchema {
     
     /// Defines the most up to date version of the Model's schema.
     /// - Parameters:
-    ///   - name: The current name of the model.
+    ///   - name: The latest name of the model.
     ///   - attributes: The complete collection of attributes for the current version of this model.
     /// - Returns: A `ModelMigration` representing the most recent version of a model.
     public static func latest(_ name: StaticString, _ attributes: AttributeSchema...) -> Self {
