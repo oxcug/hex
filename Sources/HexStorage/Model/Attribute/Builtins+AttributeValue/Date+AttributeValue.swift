@@ -12,7 +12,7 @@ extension Date: AttributeValue {
     
     public init(sql: String) {
         let formatter = DateFormatter()
-        formatter.dateFormat = ""
+        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
         self = formatter.date(from: sql)!
     }
 }

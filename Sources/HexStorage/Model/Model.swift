@@ -1,19 +1,26 @@
-public protocol RawModel {
-    
-    var identifier: UUID { get }
+<<<<<<< HEAD
+#if os(WASI)
+import SwiftFoundation
+#else
+import Foundation
+#endif
+
+=======
+>>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
+public protocol RawModel: Codable {
     
     init()
     
     static var name: StaticString { get }
     
-    static func columns() -> [AttributeMetadata]
+    static func columns<M: RawModel>() -> [AttributeMetadata<M>]
     
-    static func column(named: String) -> AttributeMetadata?
+    static func column<M: RawModel>(named: String) -> AttributeMetadata<M>?
     
-    static func migrate<T: RawModel>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>?
+    static func migrate<M: RawModel>(using current: ModelMigrationBuilder<M>) -> ModelOperation<M>?
 }
 
-open class Model: RawModel, Codable, Identifiable, Equatable {
+open class Model: RawModel, Codable {
     
     open class func migrate<T>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>? where T : RawModel {
         preconditionFailure("Subclass must implement class `migrate` function.")
@@ -22,32 +29,34 @@ open class Model: RawModel, Codable, Identifiable, Equatable {
     public typealias ID = UUID
     
     open class var name: StaticString {
-        
         preconditionFailure("Sublcass must implement class getter `name`")
     }
-    
-
-    public static func == (lhs: Model, rhs: Model) -> Bool {
-        return lhs.identifier == rhs.identifier
-    }
-    
-    public var id: UUID { identifier }
-    
-    public private(set) var identifier = UUID()
     
     public required init() {
         
     }
     
+<<<<<<< HEAD
     public static func columns() -> [AttributeMetadata] {
-        columns(filterByName: nil)
+        return columns(filterByName: nil)
     }
     
     public static func column(named: String) -> AttributeMetadata? {
-        columns(filterByName: named).first
+=======
+    public static func column<M>(named: String) -> AttributeMetadata<M>? where M : RawModel {
+        return columns(filterByName: named)
     }
     
-    static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
+    public static func columns<M: RawModel>() -> [AttributeMetadata<M>] {
+        return columns<M>(filterByName: nil)
+    }
+    
+    public static func column(named: String) -> AttributeMetadata<Self>? {
+>>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
+        return columns(filterByName: named).first
+    }
+    
+    static func columns<M: RawModel>(filterByName: String? = nil) -> [AttributeMetadata<M>] {
         let mirror = Mirror(reflecting: Self.init())
         var cols = [AttributeMetadata]()
         
@@ -56,8 +65,8 @@ open class Model: RawModel, Codable, Identifiable, Equatable {
                 let name = child.label?.dropFirst(1),
                 filterByName == nil || name == filterByName! {
                 
-                if let out = child.value as? AttributeProtocol {
-                    cols.append(out.metadata(with: String(name)))
+                if let out = child.value as? AttributeProtocol, let md = out.metadata(with: mirror, descendent: child) {
+                    cols.append(md)
                 }
             }
         }

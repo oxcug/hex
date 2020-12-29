@@ -16,7 +16,7 @@ class BaseColumnStorageTestCase: StorageTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
-        guard let col = Example.column(named: columnName) else {
+        guard let col = ExampleModel.column(named: columnName) else {
             XCTFail()
             return
         }

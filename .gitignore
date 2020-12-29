@@ -1,3 +1,5 @@
+.vscode
+Tests/*/XCTestManifests.swift
 Package.resolved
 .idea
 .swiftpm

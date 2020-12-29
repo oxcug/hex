@@ -1,23 +1,34 @@
 import XCTest
 import HexStorage
 
-class Test_ModelOperations: XCTestCase {
+class Test_Upsert_ModelOperations: XCTestCase {
     
+<<<<<<< HEAD
+    let model = ExampleModel()
+
+=======
     let model = Example()
     
-    func testUpsert() {
-        XCTAssertNoThrow(
-            try model
-                .upsert()
-                .commit(using: .default)
-                .sync()
-        )
+>>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
+    func testUpsert() throws {
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
 
-        let out: [Example] = try? Example
+<<<<<<< HEAD
+        let queryResult: [ExampleModel] = try ExampleModel
+=======
+        let queryResult: [Example] = try Example
+>>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
             .findAll()
             .commit(using: .default)
             .sync()
         
-        XCTAssertEqual(out.count, 1)
+        XCTAssertEqual(queryResult.count, 1)
+<<<<<<< HEAD
+        XCTAssertEqual(queryResult,  [model])
+=======
+>>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
     }
 }

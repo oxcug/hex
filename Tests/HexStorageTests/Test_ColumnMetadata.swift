@@ -4,7 +4,7 @@ import HexStorage
 class Test_ExampleModel_Schema: StorageTestCase {
     
     func testName() {
-        XCTAssertEqual(String(describing: Example.name), "example")
+        XCTAssertEqual(String(describing: ExampleModel.name), "example")
     }
 }
 
