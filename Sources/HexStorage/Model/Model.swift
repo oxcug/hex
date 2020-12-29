@@ -1,21 +1,18 @@
-<<<<<<< HEAD
 #if os(WASI)
 import SwiftFoundation
 #else
 import Foundation
 #endif
 
-=======
->>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
 public protocol RawModel: Codable {
     
     init()
     
     static var name: StaticString { get }
     
-    static func columns<M: RawModel>() -> [AttributeMetadata<M>]
+    static func columns() -> [AttributeMetadata]
     
-    static func column<M: RawModel>(named: String) -> AttributeMetadata<M>?
+    static func column(named: String) -> AttributeMetadata?
     
     static func migrate<M: RawModel>(using current: ModelMigrationBuilder<M>) -> ModelOperation<M>?
 }
@@ -36,27 +33,15 @@ open class Model: RawModel, Codable {
         
     }
     
-<<<<<<< HEAD
     public static func columns() -> [AttributeMetadata] {
         return columns(filterByName: nil)
     }
     
     public static func column(named: String) -> AttributeMetadata? {
-=======
-    public static func column<M>(named: String) -> AttributeMetadata<M>? where M : RawModel {
-        return columns(filterByName: named)
-    }
-    
-    public static func columns<M: RawModel>() -> [AttributeMetadata<M>] {
-        return columns<M>(filterByName: nil)
-    }
-    
-    public static func column(named: String) -> AttributeMetadata<Self>? {
->>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1
         return columns(filterByName: named).first
     }
     
-    static func columns<M: RawModel>(filterByName: String? = nil) -> [AttributeMetadata<M>] {
+    static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
         let mirror = Mirror(reflecting: Self.init())
         var cols = [AttributeMetadata]()
         
