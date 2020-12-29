@@ -10,9 +10,9 @@ public protocol RawModel: Codable {
     
     static var name: StaticString { get }
     
-    static func columns() -> [AttributeMetadata]
+    static func columns<M: RawModel>() -> [AttributeMetadata<M>]
     
-    static func column(named: String) -> AttributeMetadata?
+    static func column<M: RawModel>(named: String) -> AttributeMetadata<M>?
     
     static func migrate<M: RawModel>(using current: ModelMigrationBuilder<M>) -> ModelOperation<M>?
 }
