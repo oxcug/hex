@@ -1,10 +1,6 @@
 protocol AttributeProtocol {
     
-<<<<<<< HEAD:Sources/HexStorage/Model/Attribute/AttributeProtocol.swift
     func metadata(with mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata?
-=======
-    func metadata<M: RawModel>(with mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata<M>?
->>>>>>> b478d27cfbdffa9632629d511abfe028bbd6d7c1:Sources/HexStorage/Model/Attribute/AttributeProtocol.swift
         
     var defaultValue: AttributeValue? { get }
     
