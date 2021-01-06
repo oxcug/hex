@@ -1,5 +1,5 @@
 <center>
-![Icon](Meta/Icon.png)
+![Icon](./Meta/Icon.png)
 
 # Hex Storage
 </center>
