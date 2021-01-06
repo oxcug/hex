@@ -16,7 +16,6 @@ class Test_Upsert_ModelOperations: XCTestCase {
             .commit(using: .default)
             .sync()
         
-        XCTAssertEqual(queryResult.count, 1)
-        XCTAssertEqual(queryResult,  [model])
+        XCTAssertEqual(queryResult, [model])
     }
 }

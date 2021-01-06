@@ -22,20 +22,20 @@ public class Transaction<Model: RawModel> {
             config.dbs[i].pendingOperation = nil
             
             var db = config.dbs[i]
-            var out = [String:Codable?]()
+            var out = [String:Any?]()
             
             try config.executeQuery(&db, sql: query) { result in
                 result.forEach { (k, v) in
                     guard let column = Model.column(named: k) else { return }
-                    let value: AttributeValue?
+                    let value: Any?
                     
                     if v.lowercased() != "null" {
                         switch column.type {
-                        case .date: value = Date(sql: v)
+                        case .date: value = ISO8601DateFormatter().string(from: Date(sql: v)) 
                         case .float: value = Double(sql: v)
                         case .integer: value = Int(sql: v)
                         case .string: value = v
-                        case .uuid: value = UUID(sql: v)
+                        case .uuid: value = UUID(sql: v).uuidString
                         }
                     } else {
                         value = nil
@@ -45,7 +45,22 @@ public class Transaction<Model: RawModel> {
                 }
             }
             
-//            aggregate.append(obj)
+            guard out.count > 0 else { continue }
+
+            do {
+                let decoder = JSONDecoder()
+                let raw = try JSONSerialization.data(withJSONObject: out)
+
+                guard let modelString = String(data: raw, encoding: .utf8),
+                    let modelData = modelString.data(using: .utf8) else {
+                    preconditionFailure("Failed to convert \(out) to JSON object.")
+                }
+
+                let model = try decoder.decode(Model.self, from: modelData)
+                aggregate.append(model)
+            } catch {
+                print("Failed to encode dictionary as JSON object! \(error)")
+            }
         }
         
         return aggregate
