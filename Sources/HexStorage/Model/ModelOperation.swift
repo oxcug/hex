@@ -105,15 +105,21 @@ public struct ModelOperation<Model: RawModel>: AnyModelOperation {
                 
                 out += ");\n"
             case .row:
-                guard let compactValues = values?.compactMapValues({ $0 }) else {
-                    fatalError("Performing create but didn't provide values.")
+                guard let values = values else  {
+                    preconditionFailure("Failed to provide values.")
                 }
-                
-                let keys = compactValues.keys
+                let keys = values.keys
                 
                 out += """
                     INSERT INTO `\(Model.name)` (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
-                    VALUES (\(keys.map { "'\(compactValues[$0]!.sql)'" }.joined(separator: ", ")));\n
+                    VALUES (\(keys.map {
+                        guard let value = values[$0] else {
+                            preconditionFailure("Schema mismatch!")
+                        }
+                        
+                        guard let stringSQLValue = value?.sql else { return "NULL" } 
+                        return "'\(stringSQLValue)'"
+                        }.joined(separator: ", ")));\n
                     """
             }
         case .read:
