@@ -30,6 +30,7 @@ targets = [hexStorage]
 
 let package = Package(
     name: "hex-storage",
+    platforms: [ .iOS(.v10), .watchOS(.v5), .macOS(.v10_13) ],
     products: [
         .library(name: "HexStorage", targets: ["HexStorage"]),
     ],

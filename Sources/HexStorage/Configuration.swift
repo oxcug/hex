@@ -20,12 +20,20 @@ struct RelationalDatabase {
     var pendingOperation: AnyModelOperation? = nil
 }
 
+public protocol KeyValueStorage {
+    func getObject(forKey: String) -> Any?
+    
+    func set(object: Any?, forKey: String)
+}
+
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
 public enum Connection {
     case memory, file(url: URL)
 }
 
 public class Configuration {
+    
+    var kv: KeyValueStorage
     
     var dbs: [RelationalDatabase]
     
@@ -83,7 +91,9 @@ public class Configuration {
     
     /// Prepares a `StorageConfiguration` object to be used with the Storage Operation APIs.
     /// - Parameter connections: An array of defined methods for connecting to one or more compatible storage types.
-    public required init(connections: [Connection]) throws {
+    public required init(keyValueStore kvStore: KeyValueStorage, connections: [Connection]) throws {
+        kv = kvStore
+        
         /// Initialize a new SQL Database connection for each one described by the caller.
         /// See `connections` parameter.
         dbs = connections.map {
@@ -139,3 +149,17 @@ public class Configuration {
         }
     }
 }
+
+#if canImport(Foundation)
+
+extension Configuration {
+    
+    /// Convenience init for Configuration that will initialize it with a KeyValue store that uses  Apple's`Foundation` framework's `UserDefaults` but still requires the `DatabaseConnection` parameter.
+    /// - Parameter connections: A list of database connections.
+    /// - Throws: When the database connection is invalid or cannot be utilized.
+    public convenience init(connections: [Connection]) throws {
+        try self.init(keyValueStore: UserDefaults.standard, connections: connections)
+    }
+}
+
+#endif

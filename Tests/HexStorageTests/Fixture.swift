@@ -3,7 +3,7 @@ import HexStorage
 
 extension Configuration {
     static var `default`: Configuration = {
-        let config = try! Configuration(connections: [.memory])
+        let config = try! Configuration(keyValueStore: UserDefaults(suiteName: "Tests")!, connections: [.memory])
         try! config.register(model: ExampleModel.self)
         return config
     }()
