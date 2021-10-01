@@ -4,9 +4,8 @@
 
 import XCTest
 
-import StorageTests
-
-var tests = [XCTestCaseEntry]()
-tests += HexStorageTests.__allTests()
-
-XCTMain(tests)
+final class Test_StrictDifference: XCTestCase {
+    func test() {
+        // TODO: 😭
+    }
+}
