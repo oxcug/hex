@@ -1,0 +1,14 @@
+//
+// Copyright © 2021 Benefic Technologies Inc. All rights reserved.
+// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
+
+extension Double: AttributeValue {
+
+    public static var type: AttributeValueType {
+        .float
+    }
+    
+    public init(sql: String) {
+        self = Double(sql)!
+    }
+}

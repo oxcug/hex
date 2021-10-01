@@ -1,10 +1,10 @@
 <center>
 ![Icon](./Meta/Icon.png)
 
-# Hex Storage
+# Hex
 </center>
 
-https://trello.com/b/4htzSFYK/hex-storage
+![Swift](https://github.com/oxcug/hex/actions/workflows/swift.yml/badge.svg)
 
 This library is built for app development by providing a simple and unified API for:
 
@@ -64,7 +64,7 @@ Here are a few code snippets of what you can do with this library:
 ### Object Relational Model Storage:
 
 ```swift
-import HexStorage
+import Storage
 
 class User: Model {
     
@@ -79,7 +79,7 @@ class User: Model {
 ### Key Value Storage:
 
 ```swift
-import HexStorage
+import Storage
 
 class Settings {
 
