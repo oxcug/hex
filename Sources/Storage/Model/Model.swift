@@ -8,56 +8,77 @@ import SwiftFoundation
 import Foundation
 #endif
 
-public protocol RawModel: Codable {
-    
-    init()
-    
-    static var name: StaticString { get }
-    
-    static func columns() -> [AttributeMetadata]
-    
-    static func column(named: String) -> AttributeMetadata?
-    
-    static func migrate<M: RawModel>(using current: ModelMigrationBuilder<M>) -> ModelOperation<M>?
+protocol OpaqueModel {
+    associatedtype Conformance
 }
 
-open class Model: RawModel, Codable {
-    
-    open class func migrate<T>(using current: ModelMigrationBuilder<T>) -> ModelOperation<T>? where T : RawModel {
-        preconditionFailure("Subclass must implement class `migrate` function.")
+extension KeyPath {
+    var propertyComponent: String {
+        String(describing: self).replacingOccurrences(of: "\\\(String(describing: Root.self)).", with: "")
     }
+}
+
+@dynamicMemberLookup
+public final class Model<Schema: SchemaRepresentable> {
     
-    public typealias ID = UUID
+    typealias Schema = Schema
     
-    open class var name: StaticString {
-        preconditionFailure("Sublcass must implement class getter `name`")
-    }
+    var attributeValueStorage = [String: AttributeValue?]()
     
-    public required init() {
-        
-    }
+    var attributeTransformers = [String: AttributeTransformer]()
     
-    public static func columns() -> [AttributeMetadata] {
-        return columns(filterByName: nil)
-    }
-    
-    public static func column(named: String) -> AttributeMetadata? {
-        return columns(filterByName: named).first
-    }
-    
-    private static func columns(filterByName: String? = nil) -> [AttributeMetadata] {
-        let mirror = Mirror(reflecting: Self())
-        var cols = [AttributeMetadata]()
-        
-        for child in mirror.children {
-            guard let name = child.label, name.hasPrefix("_"), filterByName == nil || ("_" + filterByName! == name) else { continue }
-            
-            let label = String(name.dropFirst(1))
-            if let out = child.value as? AttributeProtocol, let md = out.metadata(using: label, mirror: mirror, descendent: child) {
-                cols.append(md)
-            }   
+    func populateAttributeTransformers() {
+        Self.Schema.attributeMetadatas().forEach {
+            attributeTransformers[$0.name] = $0.transformer
         }
+    }
+    
+    func populateAttributeValueStorage(values: [String: AttributeValue?]) {
+        values.forEach {
+            if let fn = attributeTransformers[$0.key] {
+                attributeValueStorage[$0.key] = (fn.set($0.value!) as? any AttributeValue)
+            } else {
+                attributeValueStorage[$0.key] = $0.value
+            }
+        }
+    }
+    
+    func retreieveAttributeValueFromStorage(for key: String) -> AttributeValue? {
+        guard let value = attributeValueStorage[key] else { fatalError() }
+        if let fn = attributeTransformers[key] {
+            return (fn.get(value) as! any AttributeValue)
+        } else {
+            return value
+        }
+    }
+    
+    public required init(with value: Schema) {
+        var values = [String: AttributeValue?]()
+        let m = Mirror(reflecting: value)
+        print(m.children.map { String(describing: $0.value.self )})
+        m.children
+            .filter { $0.label?.starts(with: "_") ?? false }
+            .forEach {
+                guard let sub = $0.label?.dropFirst(1) else { return }
+                let key = String(sub)
+                
+                values[key] = ($0.value as? AttributeProtocol)?.value
+            }
         
-        return cols
+        populateAttributeTransformers()
+        populateAttributeValueStorage(values: values)
+    }
+    
+    public required init(from attributeValues: [String: AttributeValue?]) {
+        populateAttributeTransformers()
+        self.attributeValueStorage = attributeValues
+    }
+    
+    public subscript<T>(dynamicMember keyPath: KeyPath<Schema.Conformant, T>) -> T {
+        return retreieveAttributeValueFromStorage(for: keyPath.propertyComponent) as! T
+    }
+    
+    public subscript<T>(dynamicMember keyPath: KeyPath<Schema.Conformant, T>) -> T? {
+        return retreieveAttributeValueFromStorage(for: keyPath.propertyComponent) as? T
     }
 }

@@ -2,13 +2,17 @@
 // Copyright © 2021 Benefic Technologies Inc. All rights reserved.
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
-import CSQLite3
+import SQLite3
 
 #if os(WASI)
 import SwiftFoundation
 #else
 import Foundation
 #endif
+
+enum SQLError: Error {
+    case executionFailure(String)
+}
 
 enum ConfigurationError: Error {
     case duplicateRegistrationForModel
@@ -43,45 +47,47 @@ public class Configuration {
     
     typealias ExecuteQueryBlock = ([String:String]) -> Void
 
-    func executeQuery(_ db: inout RelationalDatabase, sql: String, block: ExecuteQueryBlock) throws {
+    func executeQuery(_ db: inout RelationalDatabase, sql: String, block: @escaping ExecuteQueryBlock) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
         var blockCopy = block
-
-        let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
-            guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
-                fatalError("Param is not of type `ExecuteQueryBlock`!")
-            }
-            
-            var results = [String:String]()
-            for i in 0..<Int(argc) {
-                guard let cBuffer = argv?[Int(i)], let cName = columnName?[i] else {
-                    return SQLITE_ABORT
+        
+        try withUnsafeMutablePointer(to: &blockCopy) {
+            let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
+                guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
+                    fatalError("Param is not of type `ExecuteQueryBlock`!")
                 }
                 
-                let column = String(cString: cName)
-                let value = String(cString: cBuffer)
-                results[column] = value
-            }
+                var results = [String:String]()
+                for i in 0..<Int(argc) {
+                    guard let cBuffer = argv?[Int(i)], let cName = columnName?[i] else {
+                        return SQLITE_ABORT
+                    }
+                    
+                    let column = String(cString: cName)
+                    let value = String(cString: cBuffer)
+                    results[column] = value
+                }
+                
+                result(results)
+                return 0
+            }, $0, &errorMessage)
             
-            result(results)
-            return 0
-        }, &blockCopy, &errorMessage)
-        
-        guard rc == SQLITE_OK, errorMessage == nil else {
-            fatalError("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
+            guard rc == SQLITE_OK, errorMessage == nil else {
+                throw SQLError.executionFailure("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
+            }
         }
         
         db.pendingOperation = nil
     }
 
-    public func register(model: RawModel.Type...) throws {
-        try register(models: model)
+    public func register(schema: any SchemaRepresentable.Type...) throws {
+        try register(schemas: schema)
     }
     
-    public func register(models: [RawModel.Type]) throws {
+    public func register(schemas: [any SchemaRepresentable.Type]) throws {
         /// Convert list of models into a map (verifying that there are no duplicate names).
-        for model in models {
-            let name = String(describing: model.name)
+        for schema in schemas {
+            let name = String(describing: schema._schemaName.description)
             
             /// Initially set the value of the migrationCount map for each db to a wrapped nil value unless it's already been retrieved from the db when the configuration was initialized.
             /// This way, we don't worry about updating the
@@ -139,9 +145,17 @@ public class Configuration {
 
                 SELECT `modelName`, `numberOfMigrationsPerformed` FROM `__migrations`;
                 """
+            var latestTableMigrationCountMap = [String: UInt?]()
             try executeQuery(&dbs[i], sql: query)  { result in
-                print(result)
+                guard let modelName = result["modelName"],
+                      let numberOfMigrationsPerformed = result["numberOfMigrationsPerformed"],
+                      let version = UInt(numberOfMigrationsPerformed)
+                else {
+                    fatalError()
+                }
+                latestTableMigrationCountMap[modelName] = version
             }
+            dbs[i].latestTableMigrationCountMap = latestTableMigrationCountMap
         }
     }
     
