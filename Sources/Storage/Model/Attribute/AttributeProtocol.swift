@@ -2,7 +2,12 @@
 // Copyright © 2021 Benefic Technologies Inc. All rights reserved.
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
-protocol AttributeProtocol {
+public struct AttributeTransformer {
+    var get: ((Any?) -> Any?)
+    var set: ((Any) -> Any?)
+}
+
+public protocol AttributeProtocol {
     
     func metadata(using label: String, mirror: Mirror, descendent: Mirror.Child) -> AttributeMetadata?
         
@@ -18,13 +23,33 @@ public struct AttributeMetadata {
     public let type: AttributeValueType
     
     public let nullable: Bool
+    
+    public var transformer: AttributeTransformer?
+    
+    public init(name: String, type: AttributeValueType, nullable: Bool, transformer: AttributeTransformer? = nil) {
+        self.name = name
+        self.type = type
+        self.nullable = nullable
+        self.transformer = transformer
+    }
 }
 
-public protocol AttributeValue: Codable {
-    
+public protocol AttributeValue {
+        
     static var type: AttributeValueType { get }
     
+    var asSQL: String { get }
+    
     init(sql: String)
+}
+
+public protocol NullableAttributeValue: AttributeValue {}
+
+extension AttributeValue {
+    
+    static var isNullable: Bool {
+        return self as? NullableAttributeValue == nil
+    }
 }
 
 public enum AttributeValueType {

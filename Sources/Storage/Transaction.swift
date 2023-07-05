@@ -4,7 +4,7 @@
 
 import Foundation
 
-public class Transaction<Model: RawModel> {
+public class Transaction<Schema: SchemaRepresentable> {
     
     weak var config: Configuration?
     
@@ -13,8 +13,8 @@ public class Transaction<Model: RawModel> {
     }
         
     @discardableResult
-    public func sync() throws -> [Model] {
-        var aggregate = [Model]()
+    public func sync() throws -> [Model<Schema>] {
+        var aggregate: [Model<Schema>]
         guard let config = config else {
             preconditionFailure("Configuration doesn't exist within this context anymore!")
         }
@@ -26,47 +26,39 @@ public class Transaction<Model: RawModel> {
             config.dbs[i].pendingOperation = nil
             
             var db = config.dbs[i]
-            var out = [String:Any?]()
+            var out = [[String: AttributeValue?]]()
             
             try config.executeQuery(&db, sql: query) { result in
+                var row = [String: AttributeValue?]()
                 result.forEach { (k, v) in
-                    guard let column = Model.column(named: k) else { return }
-                    let value: Any?
+                    guard let column = Schema.attributeMetadata(for: k) else { return }
+                    let value: AttributeValue?
                     
                     if v.lowercased() != "null" {
                         switch column.type {
-                        case .date: value = ISO8601DateFormatter().string(from: Date(sql: v)) 
+                        case .date: value = ISO8601DateFormatter().string(from: Date(sql: v))
                         case .float: value = Double(sql: v)
                         case .integer: value = Int(sql: v)
                         case .string: value = v
-                        case .uuid: value = UUID(sql: v).uuidString
+                        case .uuid: value = UUID(sql: v)
                         }
                     } else {
                         value = nil
                     }
                     
-                    out[k] = value
+                    row[k] = value
                 }
+                out.append(row)
             }
             
             guard out.count > 0 else { continue }
 
-            do {
-                let decoder = JSONDecoder()
-                let raw = try JSONSerialization.data(withJSONObject: out)
-
-                guard let modelString = String(data: raw, encoding: .utf8),
-                    let modelData = modelString.data(using: .utf8) else {
-                    preconditionFailure("Failed to convert \(out) to JSON object.")
-                }
-
-                let model = try decoder.decode(Model.self, from: modelData)
-                aggregate.append(model)
-            } catch {
-                print("Failed to encode dictionary as JSON object! \(error)")
+            aggregate = out.map {
+                Model<Schema>(from: $0)
             }
+            return aggregate
         }
         
-        return aggregate
+        return []
     }
 }

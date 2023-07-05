@@ -2,44 +2,117 @@
 // Copyright © 2021 Benefic Technologies Inc. All rights reserved.
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
-import CSQLite3
 
-public extension RawModel {
-        
-    /// Creates a operation to `upsert` (update or insert) this model.
-    func upsert() -> ModelOperation<Self> {
-        var values = [String:AttributeProtocol]()
-        let mirror = Mirror(reflecting: self)
-        
-        for child in mirror.children {
-            guard let label = child.label else {
-                continue
-            }
-            
-            /// Remove underscore from label if it's present.
-            let name: String
-            if label.hasPrefix("_") {
-                name = String(label.dropFirst())
-            } else {
-                name = label
-            }
-            
-            guard let value = child.value as? AttributeProtocol, let col = Self.column(named: name) else {
-                continue
-            }
-            
-            values[col.name] = value
-        }
-        
-        return ModelOperation(.create, .row, values: values)
+
+public class Predicate<Schema> {
+    
+    enum Operator {
+        case and, or, equals, contains, lessThan, greaterThan, lessThanOrEquals, greaterThanOrEquals
     }
     
-    static func findAll() -> ModelOperation<Self> {
-        ModelOperation(.read, .table)
+    enum Param {
+        case subPredicate(Predicate)
+        case literalValue(AttributeValue)
+        case columnSymbol(String)
+    }
+    
+    var lhs: Param
+    var op: Operator
+    var rhs: Param
+
+    init(lhs: Param, op: Operator, rhs: Param) {
+        self.lhs = lhs
+        self.op = op
+        self.rhs = rhs
+    }
+}
+
+public extension KeyPath where Value == String? {
+    static func ==(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs!))
+    }
+    static func ~=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs!))
+    }
+}
+
+extension Predicate {
+    
+    private static func _compileOperation(op: Operator) -> String {
+        var sql = ""
+        switch op {
+        case .contains:
+            sql += "LIKE"
+        case .and:
+            sql += "AND"
+        case .or:
+            sql += "OR"
+        case .equals:
+            sql += "="
+        case .lessThan:
+            sql += "<"
+        case .greaterThan:
+            sql += ">"
+        case .lessThanOrEquals:
+            sql += "<="
+        case .greaterThanOrEquals:
+            sql += ">="
+        }
+        
+        return sql
+    }
+    
+    private static func _compileSymbol(xhs: Param, op: Operator, for config: Configuration) -> String {
+        var sql = ""
+        
+        switch xhs {
+        case .columnSymbol(let col):
+            sql += "\(col)"
+        case .literalValue(let val):
+            switch op {
+            case .contains:
+                guard let val = val as? String else { fatalError() }
+                sql += "%\(val)%".asSQL
+            default:
+                sql += val.asSQL
+            }
+        case .subPredicate(let pred):
+            sql += pred.compile(for: config)
+        }
+        
+        return sql
+    }
+    
+    func compile(for config: Configuration) -> String {
+        var sql = " "
+        
+        sql += Self._compileSymbol(xhs: lhs, op: op, for: config)
+        sql += " "
+        sql += Self._compileOperation(op: op)
+        sql += " "
+        sql += Self._compileSymbol(xhs: rhs, op: op, for: config)
+        
+        return sql
+    }
+}
+
+public extension Model {
+        
+    /// Creates a operation to `upsert` (update or insert) this model.
+    func upsert() -> ModelOperation<Schema> {
+        ModelOperation(.create, .row, values: self.attributeValueStorage)
     }
     
     /// Deletes this model from the .
-    func delete() -> ModelOperation<Self> {
-        return ModelOperation(.delete, .row)
+    func delete() -> ModelOperation<Schema> {
+        ModelOperation(.delete, .row)
+    }
+    
+    static func find(where predicate: Predicate<Schema>, offset: UInt = 0, count: UInt = 1) -> ModelOperation<Schema> {
+        ModelOperation(.read, .row, predicate: predicate)
+    }
+    
+    static func findAll() -> ModelOperation<Schema> {
+        ModelOperation(.read, .table)
     }
 }

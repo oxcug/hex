@@ -8,10 +8,19 @@ import Foundation
 #error("SwiftFoundation doesn't have `DateFormatter`.")
 #endif
 
+
 extension Date: AttributeValue {
+    
+    public var isNullable: Bool { true }
     
     public static var type: AttributeValueType {
         .date
+    }
+    
+    public var asSQL: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
+        return "\"\(formatter.string(from: self))\""
     }
     
     public init(sql: String) {
@@ -20,3 +29,5 @@ extension Date: AttributeValue {
         self = formatter.date(from: sql)!
     }
 }
+
+//extension Optional<Date>: NullableAttributeValue {}
