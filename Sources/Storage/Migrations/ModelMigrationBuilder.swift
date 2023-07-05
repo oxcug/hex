@@ -1,10 +1,10 @@
-//
-// Copyright © 2021 Benefic Technologies Inc. All rights reserved.
-// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
+///
+/// Copyright © 2021 Benefic Technologies Inc. All rights reserved.
+/// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
 /// A data structure that contains information about the current state of a model, and, using a helper method
 /// like `versioned` creates the Operations necessary to migrate a model to it's latest schema.
-public struct ModelMigrationBuilder<Model: RawModel> {
+public struct ModelMigrationBuilder<T: SchemaRepresentable> {
     
     /// The number of migrations that have been performed for this model in the past (recorded by the `__migrations` table internally).
     var numberOfPerformedMigrations: UInt?
@@ -14,7 +14,7 @@ public struct ModelMigrationBuilder<Model: RawModel> {
     ///
     /// - Parameter schemas: A list of schema's that define each historical version of the model.
     /// - Returns: A new `ModelMigration`.
-    public func versioned(_ schemas: ModelSchema...) throws -> ModelOperation<Model>? {
+    public func versioned(_ schemas: ModelSchema...) throws -> ModelOperation<T>? {
         ///
         /// Validate the `schemas` parameter:
         ///     - If multiple latest migrations found, throw `.multipleLatestModelMigrations`
@@ -31,7 +31,7 @@ public struct ModelMigrationBuilder<Model: RawModel> {
         ///     - if the number of performed migrations is greater than the number provided then `throw` (the user is not providing all the schemas).
         ///     - Otherwise generate the operations for each inbetween schema version defined in the provided by the caller.
         guard let numberOfPerformedMigrations = numberOfPerformedMigrations else {
-            return ModelOperation.createTable(validating: latestSchema)
+            return ModelOperation.createTable(validating: latestSchema, versionNumber: UInt(latestSchemas.count))
         }
         
         guard numberOfPerformedMigrations <= schemas.count else {

@@ -8,7 +8,13 @@ extension Int: AttributeValue {
         .integer
     }
     
+    public var asSQL: String {
+        "'\(self)'"
+    }
+
     public init(sql: String) {
         self = Int(sql)!
     }
 }
+ 
+//extension Optional<Int>: NullableAttributeValue {}

@@ -14,6 +14,10 @@ extension UUID: AttributeValue {
         .uuid
     }
     
+    public var asSQL: String {
+        "\"\(self.uuidString)\""
+    }
+    
     public init(sql: String) {
         self = UUID(uuidString: sql)!
     }
