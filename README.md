@@ -1,7 +1,7 @@
 <center>
 ![Icon](./Meta/Icon.png)
 
-# Hex
+# Storage
 </center>
 
 ![Swift](https://github.com/oxcug/hex/actions/workflows/swift.yml/badge.svg)
