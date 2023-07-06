@@ -22,13 +22,9 @@ extension String {
     }
 }
 
-public enum StorageAttributeValueType: String {
-    case string, integer, float, date, uuid
-}
-
 struct StorageAttributeDecl {
     var identifier: String
-    var type: StorageAttributeValueType
+    var type: String
     var nullable: Bool
 }
 
@@ -57,21 +53,22 @@ struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro {
             .forEach { variableDecl in
                 guard let idPattern = variableDecl.pattern.as(IdentifierPatternSyntax.self) else { return }
 
-                let type: StorageAttributeValueType
-                if let explicitType = variableDecl.typeAnnotation?.type.as(SimpleTypeIdentifierSyntax.self)?.name.text.lowercased() {
-                    switch explicitType {
-                    case "string": type = .string
-                    case "int": type = .integer
-                    case "double": type = .float
-                    default: fatalError()
+                let untrimmedExplicitType = variableDecl.typeAnnotation?.description
+                let explicitType = untrimmedExplicitType?.trimmingCharacters(in: CharacterSet(charactersIn: " :?"))
+                let isNullable = untrimmedExplicitType?.hasSuffix("?")
+                
+                let type: String
+                if let explicitType {
+                    switch explicitType.lowercased() {
+                    case "string": type = "string"
+                    case "int": type = "integer"
+                    case "float", "double": type = "float"
+                    default: type = explicitType.lowercased()
                     }
                 } else {
-                    type = .date
+                    type = "date"
                 }
                 
-                let y = variableDecl.typeAnnotation?.description
-                let x = y?.trimmingCharacters(in: CharacterSet(charactersIn: " :?"))
-                let isNullable = y?.hasSuffix("?")
                 let name = idPattern.identifier.text.trimmingCharacters(in: .whitespaces)
                 
                 attributeDeclarations.append(StorageAttributeDecl(identifier: name, type: type, nullable: isNullable ?? false))

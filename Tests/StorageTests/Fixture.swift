@@ -17,16 +17,17 @@ protocol ExampleSchemaProtocol {
     
 }
 
+@available(swift 5.9)
 @Schema
 final class ExampleSchema {
     typealias Conformant = ExampleSchemaProtocol
     
     var string: String = "<Default Value>"
-    var date = Date()
+    var date: Date = Date()
     var double: Double = 99
     var integer: Int = 1
     var nullableString: String?
-//    var nullableDate: Date?
+    var nullableDate: Date?
     var nullableDouble: Double?
-//    var nullableInteger: Int?
+    var nullableInteger: Int?
 }

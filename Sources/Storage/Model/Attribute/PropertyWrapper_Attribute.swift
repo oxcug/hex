@@ -49,3 +49,17 @@
         return AttributeMetadata(name: label, type: T.type, nullable: false, transformer: self.transformer)
     }
 }
+
+extension Optional: AttributeValue where Wrapped : AttributeValue {
+    public static var type: AttributeValueType {
+        Wrapped.type
+    }
+    
+    public var asSQL: String {
+        self?.asSQL ?? "NULL"
+    }
+    
+    public init(sql: String) {
+        self = Wrapped.init(sql: sql)
+    }
+}
