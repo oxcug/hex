@@ -55,7 +55,7 @@ public final class Model<Schema: SchemaRepresentable> {
     public required init(with value: Schema) {
         var values = [String: AttributeValue?]()
         let m = Mirror(reflecting: value)
-        print(m.children.map { String(describing: $0.value.self )})
+        
         m.children
             .filter { $0.label?.starts(with: "_") ?? false }
             .forEach {
@@ -75,10 +75,7 @@ public final class Model<Schema: SchemaRepresentable> {
     }
     
     public subscript<T>(dynamicMember keyPath: KeyPath<Schema.Conformant, T>) -> T {
-        return retreieveAttributeValueFromStorage(for: keyPath.propertyComponent) as! T
-    }
-    
-    public subscript<T>(dynamicMember keyPath: KeyPath<Schema.Conformant, T>) -> T? {
-        return retreieveAttributeValueFromStorage(for: keyPath.propertyComponent) as? T
+        let key = keyPath.propertyComponent
+        return retreieveAttributeValueFromStorage(for: key) as! T
     }
 }

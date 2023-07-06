@@ -5,11 +5,11 @@
 //  Created by Caleb Jonas on 7/3/23.
 //
 
-import Foundation
 import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import Foundation
 
 extension String {
     func toSnakeCasing() -> String {
@@ -34,14 +34,14 @@ extension StorageAttributeDecl {
     }
 }
 
-struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro {
+public struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro {
    
-    static func expansion(of node: AttributeSyntax, providingConformancesOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
+    public static func expansion(of node: AttributeSyntax, providingConformancesOf declaration: some DeclGroupSyntax, in context: some MacroExpansionContext) throws -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
         [("SchemaRepresentable", nil)]
     }
     
     
-    static func expansion(
+    public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
@@ -104,10 +104,12 @@ static var _schemaName: StaticString {
     "\(raw: typeName.toSnakeCasing())"
 }
 """
-        
+        let migrationBody = """
+try? current.versioned(.latest("\(typeName.toSnakeCasing())", .attribute(.string, named: "string")))
+"""
         let automaticMigration: DeclSyntax = """
 static func _migrate(as current: ModelMigrationBuilder<\(raw: typeName)>) -> ModelOperation<\(raw: typeName)>? {
-    nil
+    \(raw: migrationBody)
 }
 """
         return [
@@ -117,7 +119,7 @@ static func _migrate(as current: ModelMigrationBuilder<\(raw: typeName)>) -> Mod
         ]
     }
     
-    static func expansion(of node: AttributeSyntax,
+    public static func expansion(of node: AttributeSyntax,
                           attachedTo declaration: some DeclGroupSyntax,
                           providingAttributesFor member: some DeclSyntaxProtocol,
                           in context: some MacroExpansionContext

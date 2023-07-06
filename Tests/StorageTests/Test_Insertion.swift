@@ -7,7 +7,11 @@ import Storage
 
 class Test_Upsert_ModelOperations: XCTestCase {
     
-    let model = Model<ExampleSchema>(with: ExampleSchema.init())
+    let model: Model<ExampleSchema> = {
+       let value = ExampleSchema.init()
+        value.nullableString = "not nil!"
+        return Model(with: value)
+    }()
 
     func testUpsert() throws {
         try model
@@ -19,7 +23,9 @@ class Test_Upsert_ModelOperations: XCTestCase {
             .findAll()
             .commit(using: .default)
             .sync()
-        
-//        XCTAssertEqual(queryResult.first?.nullableString, model.nullableString)
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.nullableString, model.nullableString)
     }
 }

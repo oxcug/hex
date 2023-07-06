@@ -50,22 +50,29 @@ public class Configuration {
     func executeQuery(_ db: inout RelationalDatabase, sql: String, block: @escaping ExecuteQueryBlock) throws {
         var errorMessage: UnsafeMutablePointer<Int8>? = nil
         var blockCopy = block
+        var rc: Int32 = SQLITE_OK
         
         try withUnsafeMutablePointer(to: &blockCopy) {
-            let rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
+            print("[SQL] Executing query: \(sql)")
+            
+            rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
                 guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
                     fatalError("Param is not of type `ExecuteQueryBlock`!")
                 }
                 
                 var results = [String:String]()
                 for i in 0..<Int(argc) {
-                    guard let cBuffer = argv?[Int(i)], let cName = columnName?[i] else {
+                    guard let columnName = columnName?[i] else {
                         return SQLITE_ABORT
                     }
+                    let column = String(cString: columnName)
                     
-                    let column = String(cString: cName)
-                    let value = String(cString: cBuffer)
-                    results[column] = value
+                    if let cBuffer = argv?[i] {
+                        let value = String(cString: cBuffer)
+                        results[column] = value
+                    } else {
+                        results[column] = nil
+                    }
                 }
                 
                 result(results)
@@ -73,8 +80,9 @@ public class Configuration {
             }, $0, &errorMessage)
             
             guard rc == SQLITE_OK, errorMessage == nil else {
-                throw SQLError.executionFailure("Failed to execute SQL Query. Error: \(String(cString: errorMessage!))")
+                throw SQLError.executionFailure("Failed to execute SQL Query. Error: \"\(String(cString: errorMessage!))\"")
             }
+            print("[SQL] Succesfully executed query.")
         }
         
         db.pendingOperation = nil

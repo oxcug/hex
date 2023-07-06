@@ -37,7 +37,7 @@ struct FooSchema {
         }
     }
     static func _migrate(as current: ModelMigrationBuilder<FooSchema>) -> ModelOperation<FooSchema>? {
-        nil
+        try? current.versioned(.latest("foo_schema", .attribute(.string, named: "string")))
     }
 }
 extension FooSchema: SchemaRepresentable {
