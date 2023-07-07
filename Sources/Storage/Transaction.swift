@@ -29,6 +29,7 @@ public class Transaction<Schema: SchemaRepresentable> {
             var out = [[String: AttributeValue?]]()
             
             try config.executeQuery(&db, sql: query) { result in
+                print("[SQL] Gathered result: \(result)")
                 var row = [String: AttributeValue?]()
                 result.forEach { (k, v) in
                     guard let column = Schema.attributeMetadata(for: k) else { return }
