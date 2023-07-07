@@ -26,6 +26,6 @@ class Test_Upsert_ModelOperations: XCTestCase {
 
         let result = queryResult.first
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.nullableString, model.nullableString)
+        XCTAssertEqual(result?.nullableString, "not nil!")
     }
 }

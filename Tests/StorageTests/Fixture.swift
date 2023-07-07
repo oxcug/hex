@@ -54,7 +54,20 @@ final class ExampleSchema: SchemaRepresentable {
     }
     
     static func _attributeMetadatas(filteredBy name: String?) -> [Storage.AttributeMetadata] {
+        let attrs = [
+            AttributeMetadata(name: "string", type: .string, nullable: false),
+            AttributeMetadata(name: "date", type: .date, nullable: false),
+            AttributeMetadata(name: "double", type: .float, nullable: false),
+            AttributeMetadata(name: "integer", type: .integer, nullable: false),
+            AttributeMetadata(name: "nullableString", type: .string, nullable: true),
+            AttributeMetadata(name: "nullableDate", type: .date, nullable: true),
+            AttributeMetadata(name: "nullableDouble", type: .float, nullable: true),
+            AttributeMetadata(name: "nullableInteger", type: .integer, nullable: true)
+        ]
         
+        guard let name  else { return attrs }
+        guard let found = attrs.first(where: { $0.name == name }) else { return [AttributeMetadata]() }
+        return [found]
     }
     
     typealias Conformant = ExampleSchemaProtocol
