@@ -2,11 +2,13 @@
 
 ![Swift](https://github.com/oxcug/hex/actions/workflows/swift.yml/badge.svg)
 
-This library is built for app development by providing a simple and unified API for:
+**[🚧 WIP 🚧]** NOTE: This library is still under development but would appreciate any/all feedback!.
 
+Storage is a general purpose library that bridges multiple usecases:
+* Internal large memory representation of data
 * Object Relationship Model Storage
 * Key Value Storage
-* **[🚧 WIP 🚧]** Block / Binary Storage
+* Block / Binary Storage
 
 With the following high-level features:
 
