@@ -74,8 +74,7 @@ public final class Model<Schema: SchemaRepresentable> {
         self.attributeValueStorage = attributeValues
     }
     
-    public subscript<T>(dynamicMember keyPath: KeyPath<Schema.Conformant, T>) -> T {
-        let key = keyPath.propertyComponent
+    public subscript<T>(dynamicMember key: String) -> T {
         print("Searching using key: \(key) (storage: \(attributeValueStorage))")
         return retreieveAttributeValueFromStorage(for: key) as! T
     }
