@@ -44,7 +44,7 @@ public final class Model<Schema: SchemaRepresentable> {
     }
     
     func retreieveAttributeValueFromStorage(for key: String) -> AttributeValue? {
-        guard let value = attributeValueStorage[key] else { fatalError() }
+        guard let value = attributeValueStorage[key] else { return nil }
         if let fn = attributeTransformers[key] {
             return (fn.get(value) as! any AttributeValue)
         } else {
