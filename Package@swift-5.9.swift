@@ -21,7 +21,7 @@ let package = Package(
             ]
         ),
         .target(name: "Storage", dependencies: ["StorageMacros"]),
-        .testTarget(name: "StorageTests", dependencies: ["Storage"]),
+        .testTarget(name: "StorageTests", dependencies: ["Storage"], resources: [.copy("existing.sqlite")]),
         .testTarget(name: "StorageMacrosTests", dependencies: [
             "StorageMacros",
             .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")

@@ -87,4 +87,20 @@ class Test_Query_Operation: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.string, "example")
     }
+    
+    func testModelDoubleValue() throws {
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
+        
+        let queryResult = try Model<ExampleSchema>
+            .find(where: \.double > 0)
+            .commit(using: .default)
+            .sync()
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.double, 500.0)
+    }
 }

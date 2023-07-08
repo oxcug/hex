@@ -161,23 +161,22 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
     /// - Parameter configuration: The target configuration to perform this operation on.
     @discardableResult public func commit(using configuration: Configuration) -> Transaction<Schema> {
         for i in 0..<configuration.dbs.count {
-            /// Check if this model has been registered or not.
-            /// - If not, then throw.
-            let schemaName = Schema._schemaName.description
-            guard let performedMigrationCount = configuration.dbs[i].latestTableMigrationCountMap[schemaName] else {
-                preconditionFailure("Failed to find migration count for model named \"\(Schema._schemaName.description)\". Was this model registered?")
-            }
-            
             /// Check if the migration builder has an pending migration operation,
             /// if so, wrap the appended operation in it. Otherwise, just set this as the db's pending op.
             var resultingOp = self
             
-            let currentBuilder = ModelMigrationBuilder<Schema>(numberOfPerformedMigrations: performedMigrationCount ?? nil)
-            if let migration = Schema._migrate(as: currentBuilder) {
-                resultingOp.dependencies.append(migration)
-                configuration.dbs[i].latestTableMigrationCountMap[schemaName] = (performedMigrationCount ?? 0) + 1
+            /// Check if this model has been registered or not.
+            /// - If not, then skip generating any migrations.
+            let schemaName = Schema._schemaName.description
+            if let performedMigrationCount = configuration.dbs[i].latestTableMigrationCountMap[schemaName] {
+                let currentBuilder = ModelMigrationBuilder<Schema>(numberOfPerformedMigrations: performedMigrationCount ?? nil)
+                if let migration = Schema._migrate(as: currentBuilder) {
+                    resultingOp.dependencies.append(migration)
+                    configuration.dbs[i].latestTableMigrationCountMap[schemaName] = (performedMigrationCount ?? 0) + 1
+                }
             }
             
+            ///  Add the operation as a dependency if we have any pending operations. Otherwise, add it as the pending op.
             if var pendingOp = configuration.dbs[i].pendingOperation {
                 pendingOp.dependencies.append(resultingOp)
             } else {

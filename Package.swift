@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [],
     targets: [
         .target(name: "Storage", dependencies: []),
-        .testTarget(name: "StorageTests", dependencies: ["Storage"])
+        .testTarget(name: "StorageTests", dependencies: ["Storage"], resources: [.copy("existing.sqlite")])
     ]
 )
     
