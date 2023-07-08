@@ -71,4 +71,20 @@ class Test_Query_Operation: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.string, "example")
     }
+    
+    func testAndQueryNOT() throws {
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
+
+        let queryResult = try Model<ExampleSchema>
+            .find(where: \.string != "exampleNOT")
+            .commit(using: .default)
+            .sync()
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.string, "example")
+    }
 }

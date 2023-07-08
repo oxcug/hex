@@ -6,7 +6,7 @@
 public class Predicate<Schema> {
     
     enum Operator {
-        case and, or, equals, contains, lessThan, greaterThan, lessThanOrEquals, greaterThanOrEquals
+        case and, or, equals, notEquals, contains, lessThan, greaterThan, lessThanOrEquals, greaterThanOrEquals
     }
     
     enum Param {
@@ -37,8 +37,13 @@ public extension KeyPath where Value: AttributeValue {
     static func ==(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
         Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs))
     }
+    
     static func ~=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
         Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs))
+    }
+    
+    static func !=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .notEquals, rhs: .literalValue(rhs))
     }
 }
 
@@ -47,6 +52,8 @@ extension Predicate {
     private static func _compileOperation(op: Operator) -> String {
         var sql = ""
         switch op {
+        case .notEquals:
+            sql += "!="
         case .contains:
             sql += "LIKE"
         case .and:
