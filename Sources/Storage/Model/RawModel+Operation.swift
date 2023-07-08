@@ -45,6 +45,22 @@ public extension KeyPath where Value: AttributeValue {
     static func !=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
         Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .notEquals, rhs: .literalValue(rhs))
     }
+    
+    static func >(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThan, rhs: .literalValue(rhs))
+    }
+
+    static func >=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThanOrEquals, rhs: .literalValue(rhs))
+    }
+    
+    static func <(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThan, rhs: .literalValue(rhs))
+    }
+
+    static func <=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThanOrEquals, rhs: .literalValue(rhs))
+    }
 }
 
 extension Predicate {
