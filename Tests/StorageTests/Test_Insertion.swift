@@ -29,3 +29,46 @@ class Test_Upsert_ModelOperations: XCTestCase {
         XCTAssertEqual(result?.nullableString, "not nil!")
     }
 }
+
+class Test_Query_Operation: XCTestCase {
+    
+    let model: Model<ExampleSchema> = {
+       let value = ExampleSchema.init()
+        value.string = "example"
+        value.double = 500
+        return Model(with: value)
+    }()
+    
+    func testQuery() throws {
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
+
+        let queryResult = try Model<ExampleSchema>
+            .find(where: \.string == "example")
+            .commit(using: .default)
+            .sync()
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.string, "example")
+    }
+    
+    
+    func testAndQuery() throws {
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
+
+        let queryResult = try Model<ExampleSchema>
+            .find(where: \.string == "example" && \.double == 500)
+            .commit(using: .default)
+            .sync()
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.string, "example")
+    }
+}

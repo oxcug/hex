@@ -7,6 +7,7 @@
 #if swift(>=5.9)
 import StorageMacros
 
+@attached(peer, names: suffixed(Protocol))
 @attached(conformance)
 @attached(memberAttribute)
 @attached(member, names: named(_attributeMetadatas(filteredBy:)), named(_migrate(as:)), named(_schemaName))

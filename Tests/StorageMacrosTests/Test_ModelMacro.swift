@@ -40,6 +40,9 @@ struct FooSchema {
         try? current.versioned(.latest("foo_schema", .attribute(.string, named: "string")))
     }
 }
+protocol FooSchemaProtocol {
+
+}
 extension FooSchema: SchemaRepresentable {
 }
 

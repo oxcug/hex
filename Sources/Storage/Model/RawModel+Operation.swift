@@ -1,7 +1,6 @@
-//
-// Copyright © 2021 Benefic Technologies Inc. All rights reserved.
-// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
-
+///
+/// Copyright © 2021 Benefic Technologies Inc. All rights reserved.
+/// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
 
 public class Predicate<Schema> {
@@ -27,12 +26,19 @@ public class Predicate<Schema> {
     }
 }
 
-public extension KeyPath where Value == String? {
+public extension Predicate {
+    static func &&(self: Predicate<Schema>, rhs: Predicate<Schema>) -> Predicate<Schema> {
+        Predicate(lhs: .subPredicate(self), op: .and, rhs: .subPredicate(rhs))
+    }
+}
+
+public extension KeyPath where Value: AttributeValue {
+    
     static func ==(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs!))
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs))
     }
     static func ~=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs!))
+        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs))
     }
 }
 
