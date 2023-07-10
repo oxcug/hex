@@ -25,6 +25,8 @@ struct RelationalDatabase {
     
     var latestTableMigrationCountMap: [String: UInt?]
     
+    var readonly: Bool
+    
     var pendingOperation: AnyModelOperation? = nil
 }
 
@@ -118,6 +120,7 @@ public class Configuration {
         dbs = connections.map {
             let rc: Int32
             var db: OpaquePointer?
+            var isReadonly: Bool = false
             
             /// Passing nil to `sqlite3_open_v2` uses the default (OS Specific) VFS (virtual file system).
             /// **NOTE:** passing `[]` and `""` are  invalid VFS specifiers.
@@ -129,6 +132,7 @@ public class Configuration {
                 switch flags {
                 case .readOnly:
                     options = SQLITE_OPEN_READONLY
+                    isReadonly = true
                 case .readWrite:
                     options = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
                 }
@@ -140,7 +144,7 @@ public class Configuration {
                 fatalError("Failed to open database. Error (code: \(rc)): \(String(cString: sqlite3_errstr(rc))).")
             }
             
-            return RelationalDatabase(connection: handle, latestTableMigrationCountMap: [:])
+            return RelationalDatabase(connection: handle, latestTableMigrationCountMap: [:], readonly: isReadonly)
         }
         
         /// Last but not least, we prepare our new database connections by running the query below.
@@ -154,6 +158,7 @@ public class Configuration {
         /// By validating those items (at the cost of some overhead) we further the goals of this library by gaining
         /// significant ease of use benefits between the `Model` class and the `migrations` pattern.
         for i in 0..<dbs.count {
+            guard !dbs[i].readonly else { continue }
             let query = """
                 CREATE TABLE IF NOT EXISTS `__migrations` (
                   `modelName` VARCHAR(64) NOT NULL,
