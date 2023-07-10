@@ -36,7 +36,8 @@ public protocol KeyValueStorage {
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
 public enum Connection {
-    case memory, file(url: URL)
+    public enum FileOptions { case readOnly, readWrite }
+    case memory, file(url: URL, _ options: FileOptions)
 }
 
 public class Configuration {
@@ -123,8 +124,16 @@ public class Configuration {
             switch $0 {
             case .memory:
                 rc = sqlite3_open_v2(":memory:", &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil)
-            case .file(let url):
-                rc = sqlite3_open_v2(url.path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nil)
+            case .file(let url, let flags):
+                let options: Int32
+                switch flags {
+                case .readOnly:
+                    options = SQLITE_OPEN_READONLY
+                case .readWrite:
+                    options = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+                }
+                
+                rc = sqlite3_open_v2(url.path, &db, options, nil)
             }
             
             guard rc == SQLITE_OK, let handle = db else {

@@ -23,7 +23,7 @@ class Test_ReadExistingDB: XCTestCase {
     var conf: Configuration!
     
     override func setUpWithError() throws {
-        self.conf = try Configuration(connections: [.file(url: Bundle.module.url(forResource: "existing", withExtension: "sqlite")!)])
+        self.conf = try Configuration(connections: [.file(url: Bundle.module.url(forResource: "existing", withExtension: "sqlite")!, .readOnly)])
     }
     
     func testRead() throws {
