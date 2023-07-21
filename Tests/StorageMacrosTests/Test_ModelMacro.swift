@@ -22,6 +22,7 @@ var x: Double
 struct FooSchema {
     @Attribute
     var x: Double
+    typealias Conformant = FooSchemaProtocol
     static var _schemaName: StaticString {
         "foo_schema"
     }

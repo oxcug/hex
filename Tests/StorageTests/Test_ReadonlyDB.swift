@@ -11,7 +11,6 @@ import XCTest
 
 @Schema
 final class Demo {
-    typealias Conformant = DemoProtocol
     var ID: Int
     var Name: String
     var Hint: String

@@ -16,7 +16,6 @@ extension Configuration {
 #if swift(>=5.9)
 @Schema
 final class ExampleSchema {
-    typealias Conformant = ExampleSchemaProtocol
     var string: String = "<Default Value>"
     var date: Date = Date()
     var double: Double = 99

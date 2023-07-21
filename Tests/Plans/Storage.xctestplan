@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "1BA3730F-F215-43D4-8CD0-80F77F53376C",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "StorageMacrosTests",
+        "name" : "StorageMacrosTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "StorageTests",
+        "name" : "StorageTests"
+      }
+    }
+  ],
+  "version" : 1
+}

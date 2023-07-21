@@ -174,10 +174,10 @@ static func _migrate(as current: ModelMigrationBuilder<\(raw: typeName)>) -> Mod
     \(raw: migrationBody)
 }
 """
-//        let typealiasName: DeclSyntax = "typealias Conformant = \(raw: typeName)Protocol"
+        let typealiasName: DeclSyntax = "typealias Conformant = \(raw: typeName)Protocol"
         
         return [
-//            typealiasName,
+            typealiasName,
             currentName,
             attributeMetadatas,
             automaticMigration
