@@ -20,7 +20,12 @@ extension Date: AttributeValue {
     }
     
     public init(sql: String) {
-        self = Date()
+//        print(sql)
+//        print("Trying to create Date Object")
+        self = Date.init(timeIntervalSinceNow: 0)
+//        print("succeeded!")
+//        print(ISO8601DateFormatter().string(from: self))
+//        print("x")
 //        let formatter = DateFormatter()
 //        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
 //        self = formatter.date(from: sql)!

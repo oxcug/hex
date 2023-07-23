@@ -8,12 +8,6 @@ protocol OpaqueModel {
     associatedtype Conformance
 }
 
-extension KeyPath {
-    var propertyComponent: String {
-        String(describing: self).replacingOccurrences(of: "\\\(String(describing: Root.self)).", with: "")
-    }
-}
-
 @dynamicMemberLookup
 public final class Model<Schema: SchemaRepresentable> {
     

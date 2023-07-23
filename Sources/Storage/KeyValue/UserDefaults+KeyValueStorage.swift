@@ -9,13 +9,16 @@ import Foundation
 extension UserDefaults: KeyValueStorage {
     
     public func reset(scopeIdentifier: String?) {
-        guard let scopeIdentifier else { UserDefaults.resetStandardUserDefaults() }
+        guard let scopeIdentifier else {
+            UserDefaults.resetStandardUserDefaults()
+            return
+        }
         removeSuite(named: scopeIdentifier)
     }
     
-    public required init(scopeIdentifier: String?) {
-        guard let scopeIdentifier else { self.init() }
-        self.init(suiteName: scopeIdentifier)!
+    public static func storage(for scopeIdentifier: String?) -> KeyValueStorage {
+        guard let scopeIdentifier else { return Self.standard }
+        return UserDefaults(suiteName: scopeIdentifier)!
     }
     
     public func getObject(forKey: String) -> Any? {

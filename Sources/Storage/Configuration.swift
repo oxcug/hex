@@ -27,7 +27,7 @@ struct RelationalDatabase {
 
 public protocol KeyValueStorage {
     
-    init(scopeIdentifier: String?)
+    static func storage(for scopeIdentifier: String?) -> KeyValueStorage
     
     func getObject(forKey: String) -> Any?
     

@@ -20,7 +20,11 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ]
         ),
-        .target(name: "Storage", dependencies: ["StorageMacros"]),
+        .target(name: "CSQLite"),
+        .target(name: "Storage", dependencies: [
+            "CSQLite",
+            "StorageMacros"
+        ]),
         .testTarget(name: "StorageTests", dependencies: ["Storage"], resources: [.copy("existing.sqlite")]),
         .testTarget(name: "StorageMacrosTests", dependencies: [
             "StorageMacros",

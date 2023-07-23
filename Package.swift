@@ -14,8 +14,7 @@ let package = Package(
         .target(name: "Storage", dependencies: [
             "CSQLite",
         ], swiftSettings: [
-            .define("", .when())
-        ] ),
+        ]),
         .target(name: "CSQLite"),
         .testTarget(
             name: "StorageTests",

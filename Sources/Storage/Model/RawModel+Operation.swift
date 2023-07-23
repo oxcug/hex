@@ -5,11 +5,11 @@
 
 public class Predicate<Schema> {
     
-    enum Operator {
+    public enum Operator {
         case and, or, equals, notEquals, contains, lessThan, greaterThan, lessThanOrEquals, greaterThanOrEquals
     }
     
-    enum Param {
+    public enum Param {
         case subPredicate(Predicate)
         case literalValue(AttributeValue)
         case columnSymbol(String)
@@ -19,7 +19,7 @@ public class Predicate<Schema> {
     var op: Operator
     var rhs: Param
 
-    init(lhs: Param, op: Operator, rhs: Param) {
+    public init(lhs: Param, op: Operator, rhs: Param) {
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
@@ -32,36 +32,36 @@ public extension Predicate {
     }
 }
 
-public extension KeyPath where Value: AttributeValue {
-    
-    static func ==(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs))
-    }
-    
-    static func ~=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs))
-    }
-    
-    static func !=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .notEquals, rhs: .literalValue(rhs))
-    }
-    
-    static func >(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThan, rhs: .literalValue(rhs))
-    }
-
-    static func >=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThanOrEquals, rhs: .literalValue(rhs))
-    }
-    
-    static func <(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThan, rhs: .literalValue(rhs))
-    }
-
-    static func <=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
-        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThanOrEquals, rhs: .literalValue(rhs))
-    }
-}
+//public extension KeyPath where Value: AttributeValue {
+//    
+//    static func ==(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .equals, rhs: .literalValue(rhs))
+//    }
+//    
+//    static func ~=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .contains, rhs: .literalValue(rhs))
+//    }
+//    
+//    static func !=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .notEquals, rhs: .literalValue(rhs))
+//    }
+//    
+//    static func >(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThan, rhs: .literalValue(rhs))
+//    }
+//
+//    static func >=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .greaterThanOrEquals, rhs: .literalValue(rhs))
+//    }
+//    
+//    static func <(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThan, rhs: .literalValue(rhs))
+//    }
+//
+//    static func <=(lhs: KeyPath<Root, Value>, rhs: Value) -> Predicate<Root> {
+//        Predicate(lhs: .columnSymbol(lhs.propertyComponent), op: .lessThanOrEquals, rhs: .literalValue(rhs))
+//    }
+//}
 
 extension Predicate {
     

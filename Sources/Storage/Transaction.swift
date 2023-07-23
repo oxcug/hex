@@ -37,7 +37,7 @@ public class Transaction<Schema: SchemaRepresentable> {
                     
                     if v.lowercased() != "null" {
                         switch column.type {
-                        case .date: value = ISO8601DateFormatter().string(from: Date(sql: v))
+                        case .date: value = Date(sql: v)
                         case .float: value = Double(sql: v)
                         case .integer: value = Int(sql: v)
                         case .string: value = v

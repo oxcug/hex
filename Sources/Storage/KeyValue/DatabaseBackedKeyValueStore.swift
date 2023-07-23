@@ -8,6 +8,14 @@
 import Foundation
 
 public struct DatabaseBackedKeyValueStore: KeyValueStorage {
+    public static func storage(for scopeIdentifier: String?) -> KeyValueStorage {
+        DatabaseBackedKeyValueStore.init()
+    }
+    
+    public func reset(scopeIdentifier: String?) {
+        
+    }
+    
     public func getObject(forKey: String) -> Any? {
         nil
     }

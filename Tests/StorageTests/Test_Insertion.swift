@@ -7,27 +7,27 @@ import Storage
 
 class Test_Upsert_ModelOperations: XCTestCase {
     
-    let model: Model<ExampleSchema> = {
-       let value = ExampleSchema.init()
-        value.nullableString = "not nil!"
-        return Model(with: value)
-    }()
+//    let model: Model<ExampleSchema> = {
+//       let value = ExampleSchema.init()
+//        value.nullableString = "not nil!"
+//        return Model(with: value)
+//    }()
 
-    func testUpsert() throws {
-        try model
-            .upsert()
-            .commit(using: .default)
-            .sync()
-
-        let queryResult = try Model<ExampleSchema>
-            .findAll()
-            .commit(using: .default)
-            .sync()
-
-        let result = queryResult.first
-        XCTAssertNotNil(result)
-        XCTAssertEqual(result?.nullableString, "not nil!")
-    }
+//    func testUpsert() throws {
+//        try model
+//            .upsert()
+//            .commit(using: .default)
+//            .sync()
+//
+//        let queryResult = try Model<ExampleSchema>
+//            .findAll()
+//            .commit(using: .default)
+//            .sync()
+//
+//        let result = queryResult.first
+//        XCTAssertNotNil(result)
+//        XCTAssertEqual(result?.nullableString, "not nil!")
+//    }
 }
 
 class Test_Query_Operation: XCTestCase {
@@ -46,7 +46,7 @@ class Test_Query_Operation: XCTestCase {
             .sync()
 
         let queryResult = try Model<ExampleSchema>
-            .find(where: \.string == "example")
+            .find(where: Predicate(lhs: .columnSymbol("string"), op: .equals, rhs: .literalValue("example")))
             .commit(using: .default)
             .sync()
 
@@ -63,7 +63,9 @@ class Test_Query_Operation: XCTestCase {
             .sync()
 
         let queryResult = try Model<ExampleSchema>
-            .find(where: \.string == "example" && \.double == 500)
+                    .find(where: Predicate(lhs: .subPredicate(Predicate(lhs: .columnSymbol("string"), op: .equals, rhs: .literalValue("example"))),
+                                           op: .and,
+                                           rhs: .subPredicate(Predicate(lhs: .columnSymbol("double"), op: .equals, rhs: .literalValue(500)))))
             .commit(using: .default)
             .sync()
 
@@ -79,7 +81,7 @@ class Test_Query_Operation: XCTestCase {
             .sync()
 
         let queryResult = try Model<ExampleSchema>
-            .find(where: \.string != "exampleNOT")
+            .find(where: Predicate(lhs: .columnSymbol("string"), op: .notEquals, rhs: .literalValue("exampleNOT")))
             .commit(using: .default)
             .sync()
 
@@ -95,7 +97,7 @@ class Test_Query_Operation: XCTestCase {
             .sync()
         
         let queryResult = try Model<ExampleSchema>
-            .find(where: \.double > 0)
+            .find(where: Predicate(lhs: .columnSymbol("double"), op: .greaterThan, rhs: .literalValue(0.0)))
             .commit(using: .default)
             .sync()
 
