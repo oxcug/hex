@@ -11,7 +11,7 @@ extension Double: AttributeValue {
     }
     
     public var asSQL: String {
-        "'\(self)'"
+        "\(self)"
     }
     
     public init(sql: String) {

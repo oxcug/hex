@@ -2,13 +2,8 @@
 // Copyright © 2021 Benefic Technologies Inc. All rights reserved.
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
-import SQLite3
-
-#if os(WASI)
-import SwiftFoundation
-#else
+import CSQLite
 import Foundation
-#endif
 
 enum SQLError: Error {
     case executionFailure(String)
@@ -31,9 +26,14 @@ struct RelationalDatabase {
 }
 
 public protocol KeyValueStorage {
+    
+    init(scopeIdentifier: String?)
+    
     func getObject(forKey: String) -> Any?
     
     func set(object: Any?, forKey: String)
+    
+    func reset(scopeIdentifier: String?)
 }
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
@@ -55,37 +55,39 @@ public class Configuration {
         var blockCopy = block
         var rc: Int32 = SQLITE_OK
         
-        try withUnsafeMutablePointer(to: &blockCopy) {
-            print("[SQL] Executing query: \(sql)")
-            
-            rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
-                guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
-                    fatalError("Param is not of type `ExecuteQueryBlock`!")
-                }
-                
-                var results = [String:String]()
-                for i in 0..<Int(argc) {
-                    guard let columnName = columnName?[i] else {
-                        return SQLITE_ABORT
+        try withUnsafeMutablePointer(to: &blockCopy) { blk in
+            try sql.split(separator: ";").forEach { _sql in
+                let sql = String(_sql)
+                print("[SQL] Executing query: \(sql)")
+                rc = sqlite3_exec(db.connection, sql, { (pointer, argc, argv, columnName) -> Int32 in
+                    guard let result = pointer?.assumingMemoryBound(to: ExecuteQueryBlock.self).pointee else {
+                        fatalError("Param is not of type `ExecuteQueryBlock`!")
                     }
-                    let column = String(cString: columnName)
                     
-                    if let cBuffer = argv?[i] {
-                        let value = String(cString: cBuffer)
-                        results[column] = value
-                    } else {
-                        results[column] = nil
+                    var results = [String:String]()
+                    for i in 0..<Int(argc) {
+                        guard let columnName = columnName?[i] else {
+                            return SQLITE_ABORT
+                        }
+                        let column = String(cString: columnName)
+                        
+                        if let cBuffer = argv?[i] {
+                            let value = String(cString: cBuffer)
+                            results[column] = value
+                        } else {
+                            results[column] = nil
+                        }
                     }
-                }
+                    
+                    result(results)
+                    return 0
+                }, blk, &errorMessage)
                 
-                result(results)
-                return 0
-            }, $0, &errorMessage)
-            
-            guard rc == SQLITE_OK, errorMessage == nil else {
-                throw SQLError.executionFailure("Failed to execute SQL Query. Error: \"\(String(cString: errorMessage!))\"")
+                guard rc == SQLITE_OK, errorMessage == nil else {
+                    throw SQLError.executionFailure("Failed to execute SQL Query. Error: \"\(String(cString: errorMessage!))\"")
+                }
+                print("[SQL] Succesfully executed query.")
             }
-            print("[SQL] Succesfully executed query.")
         }
         
         db.pendingOperation = nil
@@ -190,7 +192,7 @@ public class Configuration {
     }
 }
 
-#if canImport(Foundation)
+#if canImport(Foundation.UserDefaults)
 
 extension Configuration {
     

@@ -8,10 +8,20 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(name: "Storage", targets: ["Storage"]),
     ],
-    dependencies: [],
+    dependencies: [
+    ],
     targets: [
-        .target(name: "Storage", dependencies: []),
-        .testTarget(name: "StorageTests", dependencies: ["Storage"], resources: [.copy("existing.sqlite")])
+        .target(name: "Storage", dependencies: [
+            "CSQLite",
+        ], swiftSettings: [
+            .define("", .when())
+        ] ),
+        .target(name: "CSQLite"),
+        .testTarget(
+            name: "StorageTests",
+            dependencies: ["Storage"],
+            resources: [.copy("existing.sqlite")]
+        )
     ]
 )
     

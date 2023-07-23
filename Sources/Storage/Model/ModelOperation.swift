@@ -99,12 +99,12 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
         case .create:
             switch subject {
             case .table:
-                out += "CREATE TABLE `\(tableName)` ("
+                out += "CREATE TABLE \(tableName) ("
                 
                 let cols = Schema.attributeMetadatas()
                 for i in 0..<cols.count {
                     let col = cols[i]
-                    out += "\t`\(col.name)` \(col.type.sql)"
+                    out += "`\(col.name)` \(col.type.sql)"
                     
                     if !col.nullable {
                         out += " NOT NULL"
@@ -126,7 +126,7 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
                 let keys = values.keys
                 
                 out += """
-                    INSERT INTO `\(tableName)` (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
+                    INSERT INTO \(tableName) (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
                     VALUES (\(keys.map {
                         guard let value = values[$0] else {
                             preconditionFailure("Schema mismatch!")
@@ -143,10 +143,10 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
         case .read:
             switch subject {
             case .row:
-                out += "SELECT * FROM `\(tableName)` WHERE \(searchPredicate?.compile(for: configuration) ?? "");\n"
+                out += "SELECT * FROM \(tableName) WHERE \(searchPredicate?.compile(for: configuration) ?? "");\n"
             case .table:
                 out += """
-                    SELECT * FROM `\(tableName)`;\n
+                    SELECT * FROM \(tableName);\n
                     """
             }
             // TODO: Implement other operation styles.

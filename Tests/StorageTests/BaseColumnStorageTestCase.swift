@@ -3,7 +3,7 @@
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
 import XCTest
-@testable import Storage
+import Storage
 
 class StorageTestCase: XCTestCase {
     
@@ -20,7 +20,8 @@ class BaseColumnStorageTestCase: StorageTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
-        guard let attr = ExampleSchema.attributeMetadata(for: attributeName) else {
+        let attrs = ExampleSchema._attributeMetadatas(filteredBy: attributeName)
+        guard let attr = attrs.first else {
             XCTFail()
             return
         }

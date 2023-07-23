@@ -7,7 +7,11 @@ import Storage
 
 extension Configuration {
     static var `default`: Configuration = {
+        #if os(WASI)
+        let config = try! Configuration(keyValueStore: DatabaseBackedKeyValueStore(), connections: [.memory])
+        #else
         let config = try! Configuration(keyValueStore: UserDefaults(suiteName: "Tests")!, connections: [.memory])
+        #endif
         try! config.register(schema: ExampleSchema.self)
         return config
     }()
@@ -59,7 +63,7 @@ final class ExampleSchema: SchemaRepresentable {
             AttributeMetadata(name: "nullableInteger", type: .integer, nullable: true)
         ]
         
-        guard let name  else { return attrs }
+        guard let name else { return attrs }
         guard let found = attrs.first(where: { $0.name == name }) else { return [AttributeMetadata]() }
         return [found]
     }

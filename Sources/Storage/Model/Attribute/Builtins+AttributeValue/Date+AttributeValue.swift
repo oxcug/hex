@@ -2,12 +2,7 @@
 // Copyright © 2021 Benefic Technologies Inc. All rights reserved.
 // License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
-#if !os(WASI)
 import Foundation
-#else
-#error("SwiftFoundation doesn't have `DateFormatter`.")
-#endif
-
 
 extension Date: AttributeValue {
     
@@ -18,15 +13,17 @@ extension Date: AttributeValue {
     }
     
     public var asSQL: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
-        return "\"\(formatter.string(from: self))\""
+        "\"2023-07-01 10:22:00\""
+//        let formatter = DateFormatter()
+//        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
+//        return "\"\(formatter.string(from: self))\""
     }
     
     public init(sql: String) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
-        self = formatter.date(from: sql)!
+        self = Date()
+//        let formatter = DateFormatter()
+//        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
+//        self = formatter.date(from: sql)!
     }
 }
 

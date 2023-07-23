@@ -3,7 +3,7 @@
 /// License Information: https://github.com/oxcug/hex/blob/master/LICENSE
 
 import XCTest
-@testable import Storage
+import Storage
 
 class Test_ExampleModel_Schema: StorageTestCase {
     

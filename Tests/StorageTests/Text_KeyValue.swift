@@ -8,7 +8,9 @@ import Storage
 class BaseKeyValueTestCase: XCTestCase {
     override func setUpWithError() throws {
         /// Calling `removePersistentDomain` will reset all key/value pairs giving all tests that use the `KeyValue` logic a clean state.
+        #if !os(WASI)
         UserDefaults().removePersistentDomain(forName: "Tests")
+        #endif
     }
 }
 

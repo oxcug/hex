@@ -7,8 +7,9 @@
 
 import Foundation
 import XCTest
-@testable import Storage
+import Storage
 
+#if swift(>=5.9)
 @Schema
 final class Demo {
     var ID: Int
@@ -33,3 +34,4 @@ class Test_ReadExistingDB: XCTestCase {
         XCTAssertGreaterThan(result.count, 0)
     }
 }
+#endif

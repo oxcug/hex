@@ -9,7 +9,7 @@ extension Int: AttributeValue {
     }
     
     public var asSQL: String {
-        "'\(self)'"
+        "\(self)"
     }
 
     public init(sql: String) {
