@@ -17,6 +17,7 @@ enum OperationParameter {
 extension AttributeValueType {
     var sql: String {
         switch self {
+        case .bool: return "BOOL"
         case .date: return "DATETIME"
         case .float: return "REAL"
         case .integer: return "INTEGER"

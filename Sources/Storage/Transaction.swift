@@ -37,10 +37,11 @@ public class Transaction<Schema: SchemaRepresentable> {
                     
                     if v.lowercased() != "null" {
                         switch column.type {
+                        case .bool: value = Bool(sql: v)
                         case .date: value = Date(sql: v)
                         case .float: value = Double(sql: v)
                         case .integer: value = Int(sql: v)
-                        case .string: value = v
+                        case .string: value = String(sql: v)
                         case .uuid: value = UUID(sql: v)
                         }
                     } else {

@@ -8,9 +8,9 @@ import Storage
 extension Configuration {
     static var `default`: Configuration = {
         #if os(WASI)
-        let config = try! Configuration(keyValueStore: DatabaseBackedKeyValueStore(), connections: [.memory])
+        let config = try! Configuration(keyValueStore: DatabaseBackedKeyValueStore.self, connections: [.memory])
         #else
-        let config = try! Configuration(keyValueStore: UserDefaults(suiteName: "Tests")!, connections: [.memory])
+        let config = try! Configuration(keyValueStore: DatabaseBackedKeyValueStore.self, connections: [.memory])
         #endif
         try! config.register(schema: ExampleSchema.self)
         return config

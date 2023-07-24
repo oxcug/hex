@@ -53,5 +53,5 @@ extension AttributeValue {
 }
 
 public enum AttributeValueType {
-   case string, integer, float, date, uuid
+   case string, integer, float, date, uuid, bool
 }

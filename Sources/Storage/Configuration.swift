@@ -25,26 +25,23 @@ struct RelationalDatabase {
     var pendingOperation: AnyModelOperation? = nil
 }
 
-public protocol KeyValueStorage {
-    
-    static func storage(for scopeIdentifier: String?) -> KeyValueStorage
-    
-    func getObject(forKey: String) -> Any?
-    
-    func set(object: Any?, forKey: String)
-    
-    func reset(scopeIdentifier: String?)
-}
 
 /// Describes a method of connecting to a database provider (e.g SQLite, CloudKit, etc.)
 public enum Connection {
+    
+    /// A database that exists ephemerrally in memory.
+    case memory
+    
+    /// Describes which I/O permissions should be used when accessing a persistent, file backed, connection..
     public enum FileOptions { case readOnly, readWrite }
-    case memory, file(url: URL, _ options: FileOptions)
+    
+    /// A persistent, file backed, database connection
+    case file(url: URL, _ options: FileOptions)
 }
 
 public class Configuration {
     
-    var kv: KeyValueStorage
+    public private(set) var kv: KeyValueStorageProtocol! = nil
     
     var dbs: [RelationalDatabase]
     
@@ -114,8 +111,7 @@ public class Configuration {
     
     /// Prepares a `StorageConfiguration` object to be used with the Storage Operation APIs.
     /// - Parameter connections: An array of defined methods for connecting to one or more compatible storage types.
-    public required init(keyValueStore kvStore: KeyValueStorage, connections: [Connection]) throws {
-        kv = kvStore
+    public required init(keyValueStore kvStore: KeyValueStorageProtocol.Type, connections: [Connection]) throws {
         
         /// Initialize a new SQL Database connection for each one described by the caller.
         /// See `connections` parameter.
@@ -181,6 +177,8 @@ public class Configuration {
             }
             dbs[i].latestTableMigrationCountMap = latestTableMigrationCountMap
         }
+        
+        kv = kvStore.init(config: self, scope: nil)
     }
     
     /// Cleanup the database state by closing all open connections.

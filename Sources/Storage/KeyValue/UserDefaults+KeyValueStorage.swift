@@ -6,29 +6,48 @@
 
 import Foundation
 
-extension UserDefaults: KeyValueStorage {
+class UserDefaultsBackedKeyValueStorage: KeyValueStorageProtocol {
     
-    public func reset(scopeIdentifier: String?) {
-        guard let scopeIdentifier else {
-            UserDefaults.resetStandardUserDefaults()
-            return
-        }
-        removeSuite(named: scopeIdentifier)
+    required init(config: Configuration, scope: (any KeyValueStorageScope)?) {
+        
     }
     
-    public static func storage(for scopeIdentifier: String?) -> KeyValueStorage {
-        guard let scopeIdentifier else { return Self.standard }
-        return UserDefaults(suiteName: scopeIdentifier)!
+    func getObject<T>(forKey: String) -> T? where T : AttributeValue {
+        nil
     }
     
-    public func getObject(forKey: String) -> Any? {
-        guard let obj = object(forKey: forKey) else { return nil }
-        return obj
+    func set<T>(object: T?, forKey: String) where T : AttributeValue {
+        
     }
     
-    public func set(object: Any?, forKey: String) {
-        setValue(object, forKey: forKey)
+    func reset(scope: (any KeyValueStorageScope)?) {
+        
     }
 }
+
+//extension UserDefaults: KeyValueStorageProtocol {
+//
+//    public func reset(scopeIdentifier: String?) {
+//        guard let scopeIdentifier else {
+//            UserDefaults.resetStandardUserDefaults()
+//            return
+//        }
+//        removePersistentDomain(forName: scopeIdentifier)
+//    }
+//
+//    public static func storage(for scopeIdentifier: String?) -> KeyValueStorage {
+//        guard let scopeIdentifier else { return Self.standard }
+//        return UserDefaults(suiteName: scopeIdentifier)!
+//    }
+//
+//    public func getObject(forKey: String) -> Any? {
+//        guard let obj = object(forKey: forKey) else { return nil }
+//        return obj
+//    }
+//
+//    public func set(object: Any?, forKey: String) {
+//        setValue(object, forKey: forKey)
+//    }
+//}
 
 #endif

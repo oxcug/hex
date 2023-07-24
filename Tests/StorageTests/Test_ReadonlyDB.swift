@@ -73,16 +73,15 @@ class Test_ReadExistingDB: XCTestCase {
     var conf: Configuration!
     
     override func setUpWithError() throws {
+        let kv = DatabaseBackedKeyValueStore.self
+        
         #if os(WASI)
-        let kv = DatabaseBackedKeyValueStore()
-        guard let url = URL(string: "existing.sqlite") else {
-            throw SetupError.cannotFindExistingDBURL
-        }
+        let url = URL(string: "existing.sqlite")
         #else
-        let kv = UserDefaults()
-        let url = Bundle.module.url(forResource: "existing", withExtension: "sqlite")!
+        let url = Bundle.module.url(forResource: "existing", withExtension: "sqlite")
         #endif
         
+        guard let url else { throw SetupError.cannotFindExistingDBURL }
         self.conf = try Configuration(keyValueStore: kv, connections: [.file(url: url, .readOnly)])
     }
     
