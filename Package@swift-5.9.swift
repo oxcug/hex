@@ -5,12 +5,12 @@ import CompilerPluginSupport
 
 let package = Package(
     name: "Storage",
-    platforms: [.macOS(.v10_15), .iOS(.v13)],
+    platforms: [.macOS(.v13), .iOS(.v17)],
     products: [
         .library(name: "Storage", targets: ["Storage"]),
     ],
     dependencies: [        
-        .package(url: "https://github.com/apple/swift-syntax.git", from: "509.0.0-swift-DEVELOPMENT-SNAPSHOT-2023-07-10-a"),
+        .package(url: "https://github.com/apple/swift-syntax.git", branch: "main"),
     ],
     targets: [
         .macro(
@@ -23,7 +23,7 @@ let package = Package(
         .target(name: "CSQLite"),
         .target(name: "Storage", dependencies: [
             "CSQLite",
-            "StorageMacros"
+            .target(name: "StorageMacros")
         ]),
         .testTarget(name: "StorageTests", dependencies: ["Storage"], resources: [.copy("existing.sqlite")]),
         .testTarget(name: "StorageMacrosTests", dependencies: [

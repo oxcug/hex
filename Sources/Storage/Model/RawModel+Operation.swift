@@ -137,8 +137,8 @@ public extension Model {
         ModelOperation(.delete, .row)
     }
     
-    static func find(where predicate: Predicate<Schema>, offset: UInt = 0, count: UInt = 1) -> ModelOperation<Schema> {
-        ModelOperation(.read, .row, predicate: predicate)
+    static func find(where predicate: Predicate<Schema>, offset: UInt = 0, count: UInt = 10) -> ModelOperation<Schema> {
+        ModelOperation(.read, .row, predicate: predicate, readCountLimit: count)
     }
     
     static func findAll() -> ModelOperation<Schema> {
