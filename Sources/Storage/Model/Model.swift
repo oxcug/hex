@@ -13,7 +13,7 @@ public final class Model<Schema: SchemaRepresentable> {
     
     typealias Schema = Schema
     
-    var attributeValueStorage = [String: AttributeValue?]()
+    public var attributeValueStorage = [String: AttributeValue?]()
     
     var attributeTransformers = [String: AttributeTransformer]()
     
