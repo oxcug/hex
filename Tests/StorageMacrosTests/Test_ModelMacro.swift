@@ -24,21 +24,21 @@ struct FooSchema {
     var x: Double
     typealias Conformant = FooSchemaProtocol
     static var _schemaName: StaticString {
-        "foo_schema"
+	  "foo_schema"
     }
     static func _attributeMetadatas(filteredBy name: String?) -> [AttributeMetadata] {
-        guard let name else {
-            return [AttributeMetadata(name: "x", type: .float, nullable: false, transformer: nil)]
-        }
-        switch name {
-        case "x":
-            return [AttributeMetadata(name: "x", type: .float, nullable: false, transformer: nil)]
-        default:
-            return []
-        }
+	  guard let name else {
+		  return [AttributeMetadata(name: "x", type: .float, nullable: false, transformer: nil)]
+	  }
+	  switch name {
+	  case "x":
+		  return [AttributeMetadata(name: "x", type: .float, nullable: false, transformer: nil)]
+	  default:
+		  return []
+	  }
     }
     static func _migrate(as current: ModelMigrationBuilder<FooSchema>) -> ModelOperation<FooSchema>? {
-        try? current.versioned(.latest("foo_schema", .attribute(.string, named: "string")))
+	  try? current.versioned(.latest("foo_schema", .attribute(.string, named: "string")))
     }
 }
 protocol FooSchemaProtocol {

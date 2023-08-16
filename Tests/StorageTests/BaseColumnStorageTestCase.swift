@@ -20,7 +20,7 @@ class BaseColumnStorageTestCase: StorageTestCase {
         try super.setUpWithError()
         continueAfterFailure = false
 
-        let attrs = ExampleSchema._attributeMetadatas(filteredBy: attributeName)
+		let attrs = ExampleSchema._attributeMetadatas(filteredBy: attributeName)
         guard let attr = attrs.first else {
             XCTFail()
             return

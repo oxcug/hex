@@ -8,7 +8,7 @@
 import StorageMacros
 
 @attached(peer, names: suffixed(Protocol))
-@attached(conformance)
+@attached(extension, conformances: SchemaRepresentable)
 @attached(memberAttribute)
 @attached(member, names: named(Conformant), named(_attributeMetadatas(filteredBy:)), named(_migrate(as:)), named(_schemaName))
 public macro Schema() = #externalMacro(module: "StorageMacros", type: "SchemaMacro")

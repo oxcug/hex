@@ -8,7 +8,7 @@ import Storage
 class Test_ExampleModel_Schema: StorageTestCase {
     
     func testName() {
-        XCTAssertEqual(ExampleSchema._schemaName.description, "example_schema")
+		XCTAssertEqual(ExampleSchema.schemaName.description, "example_schema")
     }
 }
 

@@ -34,16 +34,144 @@ extension StorageAttributeDecl {
     }
 }
 
-public struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro, PeerMacro {
-   
-    public static func expansion(
-      of node: AttributeSyntax,
-      providingConformancesOf declaration: some DeclGroupSyntax,
-      in context: some MacroExpansionContext
-    ) throws -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
-        [("SchemaRepresentable", nil)]
-    }
-    
+public struct SchemaMacro {}
+
+extension SchemaMacro: MemberAttributeMacro {
+	public static func expansion(of node: AttributeSyntax,
+								 attachedTo declaration: some DeclGroupSyntax,
+								 providingAttributesFor member: some DeclSyntaxProtocol,
+								 in context: some MacroExpansionContext
+	) throws -> [AttributeSyntax] {
+		// Only accept Variables (no functions etc.)
+		guard let varDecl = member.as(VariableDeclSyntax.self) else { return [] }
+		
+		// Don't append the Schema Attribute if it begins with an underscore.
+		let identifier = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text.trimmingCharacters(in: .whitespaces)
+		let isUnderscored = identifier?.hasPrefix("_") ?? false
+		guard !isUnderscored else { return [] }
+		
+		return [AttributeSyntax(
+			attributeName: IdentifierTypeSyntax(
+				name: .identifier("Attribute")
+			)
+		)]
+	}
+}
+
+
+extension SchemaMacro: MemberMacro {
+	public static func expansion(
+		of node: AttributeSyntax,
+		providingMembersOf declaration: some DeclGroupSyntax,
+		in context: some MacroExpansionContext
+	) throws -> [DeclSyntax] {
+		var attributeDeclarations = [StorageAttributeDecl]()
+		declaration.memberBlock.members
+			.compactMap { $0.as(MemberBlockItemSyntax.self) }
+			.compactMap { $0.decl.as(VariableDeclSyntax.self)?.bindings.first }
+			.forEach { variableDecl in
+				guard let idPattern = variableDecl.pattern.as(IdentifierPatternSyntax.self) else { return }
+				
+				let untrimmedExplicitType = variableDecl.typeAnnotation?.description
+				let explicitType = untrimmedExplicitType?.trimmingCharacters(in: CharacterSet(charactersIn: " :?"))
+				let isNullable = untrimmedExplicitType?.hasSuffix("?")
+				
+				let type: String
+				if let explicitType {
+					switch explicitType.lowercased() {
+						case "string": type = "string"
+						case "int": type = "integer"
+						case "float", "double": type = "float"
+						default: type = explicitType.lowercased()
+					}
+				} else {
+					type = "date"
+				}
+				
+				let name = idPattern.identifier.text.trimmingCharacters(in: .whitespaces)
+				
+				attributeDeclarations.append(StorageAttributeDecl(identifier: name, type: type, nullable: isNullable ?? false))
+			}
+		
+		let typeName: String
+		if let asStruct = declaration.as(StructDeclSyntax.self) {
+			typeName = asStruct.name.text
+		} else if let asClass = declaration.as(ClassDeclSyntax.self) {
+			typeName = asClass.name.text
+		} else {
+			typeName = "WAT"
+		}
+		
+		let attrMetadatasArray = attributeDeclarations.map { $0.asAttributeMetadata() }.joined(separator: ",\n")
+		
+		let attrSwitchBody = attributeDeclarations.map {
+			"case \"\($0.identifier)\": return [\($0.asAttributeMetadata())]"
+		}.joined(separator: "\n")
+		
+		let attributeMetadatas: DeclSyntax = """
+static func _attributeMetadatas(filteredBy name: String?) -> [AttributeMetadata] {
+ guard let name else { return [\(raw: attrMetadatasArray)] }
+ switch name {
+ \(raw: attrSwitchBody)
+ default: return []
+ }
+}
+"""
+		
+		let currentName: DeclSyntax = """
+static var _schemaName: StaticString {
+ "\(raw: typeName.toSnakeCasing())"
+}
+"""
+		let migrationBody: DeclSyntax = """
+try? current.versioned(.latest("\(raw: typeName.toSnakeCasing())", .attribute(.string, named: "string")))
+"""
+		let automaticMigration:DeclSyntax = """
+static func _migrate(as current: ModelMigrationBuilder<\(raw: typeName)>) -> ModelOperation<\(raw: typeName)>? {
+ \(migrationBody)
+}
+"""
+		let typealiasName: DeclSyntax = "typealias Conformant = \(raw: typeName)Protocol"
+		return  [
+			typealiasName,
+			currentName,
+			attributeMetadatas,
+			automaticMigration
+		]
+	}
+}
+
+extension SchemaMacro: ExtensionMacro {
+	public static func expansion(
+		of node: AttributeSyntax,
+		attachedTo declaration: some DeclGroupSyntax,
+		providingExtensionsOf type: some TypeSyntaxProtocol,
+		conformingTo protocols: [TypeSyntax],
+		in context: some MacroExpansionContext
+	) throws -> [ExtensionDeclSyntax] {
+		let typeName: String
+		if let asStruct = declaration.as(StructDeclSyntax.self) {
+			typeName = asStruct.name.text
+		} else if let asClass = declaration.as(ClassDeclSyntax.self) {
+			typeName = asClass.name.text
+		} else {
+			typeName = "WAT"
+		}
+
+		return [DeclSyntax("extension \(raw: typeName): SchemaRepresentable {}").cast(ExtensionDeclSyntax.self)]
+	}
+	
+//	public static func expansion(
+//		of node: AttributeSyntax,
+//		providingConformancesOf declaration: some DeclGroupSyntax,
+//		in context: some MacroExpansionContext
+//	) throws -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
+//		[("SchemaRepresentable", nil)]
+//	}
+}
+
+extension SchemaMacro: PeerMacro {
+	
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -52,7 +180,7 @@ public struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro, 
         
         var attributeDeclarations = [StorageAttributeDecl]()
         declaration.as(ClassDeclSyntax.self)?.memberBlock.members
-            .compactMap { $0.as(MemberDeclListItemSyntax.self) }
+			.compactMap { $0.as(MemberBlockItemSyntax.self) }
             .compactMap { $0.decl.as(VariableDeclSyntax.self)?.bindings.first }
             .forEach { variableDecl in
                 guard let idPattern = variableDecl.pattern.as(IdentifierPatternSyntax.self) else { return }
@@ -81,9 +209,9 @@ public struct SchemaMacro: MemberAttributeMacro, MemberMacro, ConformanceMacro, 
         
         let typeName: String
         if let asStruct = declaration.as(StructDeclSyntax.self) {
-            typeName = asStruct.identifier.text
+            typeName = asStruct.name.text
         } else if let asClass = declaration.as(ClassDeclSyntax.self) {
-            typeName = asClass.identifier.text
+            typeName = asClass.name.text
         } else {
             typeName = "SOME"
         }
@@ -100,108 +228,6 @@ protocol \(raw: typeName)Protocol {
 """
 
         return [decl]
-    }
-    
-    public static func expansion(
-        of node: AttributeSyntax,
-        providingMembersOf declaration: some DeclGroupSyntax,
-        in context: some MacroExpansionContext
-    ) throws -> [DeclSyntax] {
-        var attributeDeclarations = [StorageAttributeDecl]()
-        declaration.memberBlock.members
-            .compactMap { $0.as(MemberDeclListItemSyntax.self) }
-            .compactMap { $0.decl.as(VariableDeclSyntax.self)?.bindings.first }
-            .forEach { variableDecl in
-                guard let idPattern = variableDecl.pattern.as(IdentifierPatternSyntax.self) else { return }
-
-                let untrimmedExplicitType = variableDecl.typeAnnotation?.description
-                let explicitType = untrimmedExplicitType?.trimmingCharacters(in: CharacterSet(charactersIn: " :?"))
-                let isNullable = untrimmedExplicitType?.hasSuffix("?")
-                
-                let type: String
-                if let explicitType {
-                    switch explicitType.lowercased() {
-                    case "string": type = "string"
-                    case "int": type = "integer"
-                    case "float", "double": type = "float"
-                    default: type = explicitType.lowercased()
-                    }
-                } else {
-                    type = "date"
-                }
-                
-                let name = idPattern.identifier.text.trimmingCharacters(in: .whitespaces)
-                
-                attributeDeclarations.append(StorageAttributeDecl(identifier: name, type: type, nullable: isNullable ?? false))
-            }
-        
-        let typeName: String
-        if let asStruct = declaration.as(StructDeclSyntax.self) {
-            typeName = asStruct.identifier.text
-        } else if let asClass = declaration.as(ClassDeclSyntax.self) {
-            typeName = asClass.identifier.text
-        } else {
-            typeName = "SOME"
-//            fatalError("WAT")
-        }
-        
-        let attrMetadatasArray = attributeDeclarations.map { $0.asAttributeMetadata() }.joined(separator: ",\n")
-        
-        let attrSwitchBody = attributeDeclarations.map {
-            "case \"\($0.identifier)\": return [\($0.asAttributeMetadata())]"
-        }.joined(separator: "\n")
-        
-        let attributeMetadatas = DeclSyntax(stringLiteral: """
-static func _attributeMetadatas(filteredBy name: String?) -> [AttributeMetadata] {
-    guard let name else { return [\(attrMetadatasArray)] }
-    switch name {
-    \(attrSwitchBody)
-    default: return []
-    }
-}
-""")
-
-        let currentName: DeclSyntax = """
-static var _schemaName: StaticString {
-    "\(raw: typeName.toSnakeCasing())"
-}
-"""
-        let migrationBody = """
-try? current.versioned(.latest("\(typeName.toSnakeCasing())", .attribute(.string, named: "string")))
-"""
-        let automaticMigration: DeclSyntax = """
-static func _migrate(as current: ModelMigrationBuilder<\(raw: typeName)>) -> ModelOperation<\(raw: typeName)>? {
-    \(raw: migrationBody)
-}
-"""
-        let typealiasName: DeclSyntax = "typealias Conformant = \(raw: typeName)Protocol"
-        
-        return [
-            typealiasName,
-            currentName,
-            attributeMetadatas,
-            automaticMigration
-        ]
-    }
-    
-    public static func expansion(of node: AttributeSyntax,
-                          attachedTo declaration: some DeclGroupSyntax,
-                          providingAttributesFor member: some DeclSyntaxProtocol,
-                          in context: some MacroExpansionContext
-    ) throws -> [AttributeSyntax] {
-        // Only accept Variables (no functions etc.)
-        guard let varDecl = member.as(VariableDeclSyntax.self) else { return [] }
-        
-        // Don't append the Schema Attribute if it begins with an underscore.
-        let identifier = varDecl.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.text.trimmingCharacters(in: .whitespaces)
-        let isUnderscored = identifier?.hasPrefix("_") ?? false
-        guard !isUnderscored else { return [] }
-        
-        return [AttributeSyntax(
-            attributeName: SimpleTypeIdentifierSyntax(
-                name: .identifier("Attribute")
-            )
-        )]
     }
 }
 
