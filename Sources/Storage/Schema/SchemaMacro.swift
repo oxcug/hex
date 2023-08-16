@@ -5,8 +5,6 @@
 //  Created by Caleb Jonas on 7/3/23.
 //
 #if swift(>=5.9)
-import StorageMacros
-
 @attached(peer, names: suffixed(Protocol))
 @attached(extension, conformances: SchemaRepresentable)
 @attached(memberAttribute)
