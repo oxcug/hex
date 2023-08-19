@@ -160,9 +160,35 @@ VALUES (\(keys.map {
 							out += "SELECT * FROM \(tableName);\n"
 						}
 				}
+			case .update:
+				switch subject {
+					case .row:
+						guard let values = values else  {
+							preconditionFailure("Failed to provide values.")
+						}
+						let keys = values.keys
+						
+						let setClause = keys.map {
+							guard let value = values[$0] else {
+								preconditionFailure("Schema mismatch!")
+							}
+							
+							guard let stringSQLValue = value?.asSQL else {
+								return "NULL"
+							}
+							
+							return "\($0)=\(stringSQLValue)"
+						}.joined(separator: ", ")
+						
+						out += "UPDATE \(tableName) SET \(setClause) WHERE \(searchPredicate?.compile(for: configuration) ?? "");\n"
+						
+					case .table:
+						// TODO: Implement other operation styles.
+						break
+				}
+			case .delete:
 				// TODO: Implement other operation styles.
-			case .update: fallthrough
-			case .delete: out = ""
+				out = ""
 		}
 		
 		return out

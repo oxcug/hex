@@ -20,6 +20,7 @@ extension Configuration {
 #if swift(>=5.9)
 @Schema
 final class ExampleSchema {
+	var pkey: UUID = .init()
     var string: String = "<Default Value>"
     var date: Date = Date()
     var double: Double = 99

@@ -24,13 +24,29 @@ extension String {
 
 struct StorageAttributeDecl {
     var identifier: String
-    var type: String
+	var type: String
     var nullable: Bool
+}
+
+extension String {
+	var asSwiftType: String {
+		switch self.lowercased() {
+			case "uuid": return "UUID"
+			default: return self.capitalized
+		}
+	}
+	
+	var asStorageEnumType: String {
+		switch self.lowercased() {
+			case "uuid": return "uuid"
+			default: return self
+		}
+	}
 }
 
 extension StorageAttributeDecl {
     func asAttributeMetadata() -> String {
-        "AttributeMetadata(name: \"\(identifier)\", type: .\(type), nullable: \(nullable), transformer: nil)"
+		"AttributeMetadata(name: \"\(identifier)\", type: .\(type.asStorageEnumType), nullable: \(nullable), transformer: nil)"
     }
 }
 
@@ -82,6 +98,7 @@ extension SchemaMacro: MemberMacro {
 						case "string": type = "string"
 						case "int": type = "integer"
 						case "float", "double": type = "float"
+						case "uuid": type = "UUID"
 						default: type = explicitType.lowercased()
 					}
 				} else {
@@ -195,6 +212,7 @@ extension SchemaMacro: PeerMacro {
                     case "string": type = "String"
                     case "int": type = "Int"
                     case "float", "double": type = "Double"
+					case "uuid": type = "UUID"
                     default: type = explicitType.lowercased()
                     }
                 } else {
@@ -217,7 +235,7 @@ extension SchemaMacro: PeerMacro {
         }
         
         let variables = attributeDeclarations.map {
-            "var \($0.identifier): \($0.type.capitalized) { get }"
+            "var \($0.identifier): \($0.type.asSwiftType) { get }"
         }
             .joined(separator: "\n")
         

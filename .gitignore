@@ -1,3 +1,4 @@
+DerivedData/
 default.profraw
 .vscode
 Tests/*/XCTestManifests.swift

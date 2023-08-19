@@ -6,28 +6,39 @@ import XCTest
 import Storage
 
 class Test_Upsert_ModelOperations: XCTestCase {
-    
-//    let model: Model<ExampleSchema> = {
-//       let value = ExampleSchema.init()
-//        value.nullableString = "not nil!"
-//        return Model(with: value)
-//    }()
 
-//    func testUpsert() throws {
-//        try model
-//            .upsert()
-//            .commit(using: .default)
-//            .sync()
-//
-//        let queryResult = try Model<ExampleSchema>
-//            .findAll()
-//            .commit(using: .default)
-//            .sync()
-//
-//        let result = queryResult.first
-//        XCTAssertNotNil(result)
-//        XCTAssertEqual(result?.nullableString, "not nil!")
-//    }
+	func testUpdateUsingUpsert() throws {
+		let value = ExampleSchema.init()
+		value.nullableString = "not nil!"
+		let model: Model<ExampleSchema> = Model(with: value)
+		
+        try model
+            .upsert()
+            .commit(using: .default)
+            .sync()
+
+        let queryResult = try Model<ExampleSchema>
+            .findAll()
+            .commit(using: .default)
+            .sync()
+
+        let result = queryResult.first
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.nullableString, "not nil!")
+		
+		try model.assign("nullableString", to: "foobaz!")?
+			.commit(using: .default)
+			.sync()
+		
+        let queryResult2 = try Model<ExampleSchema>
+            .findAll()
+            .commit(using: .default)
+            .sync()
+
+        let result2 = queryResult2.first
+        XCTAssertNotNil(result2)
+        XCTAssertEqual(result2?.nullableString, "foobaz!")
+    }
 }
 
 class Test_Query_Operation: XCTestCase {
