@@ -44,12 +44,13 @@ public final class Model<Schema: SchemaRepresentable> {
 	
 	func findPrimaryKey() -> (column: String, value: (any AttributeValue)?)? {
 		//TODO: this is also pretty ugly. We should create a property wrapper that binds the primary instead of assuming it's the first UUID.
-		
-		guard let firstUUIDColumn = Self.Schema.attributeMetadatas()
-			.first(where: { $0.type == .uuid }) else { return nil }
+		guard let primaryKeyColumn =
+				Self.Schema.attributeMetadatas().first(where: { $0.traits.contains(.primaryKey) })
+				?? Self.Schema.attributeMetadatas().first(where: { $0.type == .uuid })
+		else { return nil }
 		return (
-			column: firstUUIDColumn.name,
-			value: self.retreieveAttributeValueFromStorage(for: firstUUIDColumn.name)
+			column: primaryKeyColumn.name,
+			value: self.retreieveAttributeValueFromStorage(for: primaryKeyColumn.name)
 		)
 	}
 	

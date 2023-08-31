@@ -28,13 +28,13 @@ struct DatabaseBackedKeyValue: SchemaRepresentable, DatabaseBackedKeyValueProtoc
     
     static func _attributeMetadatas(filteredBy name: String?) -> [AttributeMetadata] {
         [
-            .init(name: "lookup_key", type: .string, nullable: false),
+			.init(name: "lookup_key", type: .string, nullable: false, traits: [.primaryKey]),
             .init(name: "stored_value", type: .string, nullable: true),
             .init(name: "scope", type: .string, nullable: true)
         ]
     }
     
-    @Attribute var lookup_key: String
+	@Attribute(traits: [.primaryKey]) var lookup_key: String
     
     @Attribute var stored_value: String?
     

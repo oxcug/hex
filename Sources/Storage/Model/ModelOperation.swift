@@ -115,6 +115,10 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
 								out += " NOT NULL"
 							}
 							
+							if col.traits.contains(.primaryKey) {
+								out += " PRIMARY KEY"
+							}
+							
 							/// Add comma to every line except the last one (trailing commas are invalid SQL)
 							if i < cols.count - 1 {
 								out += ","

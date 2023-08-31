@@ -25,12 +25,15 @@ public struct AttributeMetadata {
     public let nullable: Bool
     
     public var transformer: AttributeTransformer?
+	
+	public let traits: [AttributeTraits]
     
-    public init(name: String, type: AttributeValueType, nullable: Bool, transformer: AttributeTransformer? = nil) {
+	public init(name: String, type: AttributeValueType, nullable: Bool, traits: [AttributeTraits] = [], transformer: AttributeTransformer? = nil) {
         self.name = name
         self.type = type
         self.nullable = nullable
         self.transformer = transformer
+		self.traits = traits
     }
 }
 
