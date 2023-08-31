@@ -81,6 +81,10 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
 		self.readCountLimit = readCountLimit
 	}
 	
+	var tableName: String {
+		overrideTableName ?? Schema._schemaName.description
+	}
+	
 	static func createTable(validating schema: ModelSchema, versionNumber: UInt) -> Self {
 		var op = Self(.create, .table)
 		let values: [String:AttributeValue] = ["modelName": Schema._schemaName.description, "numberOfMigrationsPerformed": Int(versionNumber)]
@@ -99,7 +103,6 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
 			return out
 		}
 		
-		let tableName = overrideTableName ?? Schema._schemaName.description
 		switch type {
 			case .create:
 				switch subject {
@@ -137,17 +140,18 @@ public struct ModelOperation<Schema: SchemaRepresentable>: AnyModelOperation {
 						out += """
 INSERT INTO \(tableName) (\(keys.map { "`\($0)`" }.joined(separator: ", ")))
 VALUES (\(keys.map {
-	guard let value = values[$0] else {
-		preconditionFailure("Schema mismatch!")
-	}
-	
-	guard let stringSQLValue = value?.asSQL else {
-		return "NULL"
-	}
+ guard let value = values[$0] else {
+  preconditionFailure("Schema mismatch!")
+ }
+ 
+ guard let stringSQLValue = value?.asSQL else {
+  return "NULL"
+ }
 
-	return stringSQLValue
-}.joined(separator: ", ")));\n
+ return stringSQLValue
+}.joined(separator: ", ")))
 """
+						out += ";\n"
 				}
 			case .read:
 				switch subject {
@@ -167,35 +171,45 @@ VALUES (\(keys.map {
 			case .update:
 				switch subject {
 					case .row:
-						guard let values = values else  {
-							preconditionFailure("Failed to provide values.")
-						}
-						let keys = values.keys
-						
-						let setClause = keys.map {
-							guard let value = values[$0] else {
-								preconditionFailure("Schema mismatch!")
-							}
-							
-							guard let stringSQLValue = value?.asSQL else {
-								return "NULL"
-							}
-							
-							return "\($0)=\(stringSQLValue)"
-						}.joined(separator: ", ")
-						
-						out += "UPDATE \(tableName) SET \(setClause) WHERE \(searchPredicate?.compile(for: configuration) ?? "");\n"
-						
+						out += generateUpdate(configuration: configuration)
 					case .table:
 						// TODO: Implement other operation styles.
 						break
 				}
 			case .delete:
-				// TODO: Implement other operation styles.
-				out = ""
+				switch subject {
+					case .row:
+						out += "DELETE FROM \(tableName) WHERE \(generateValuesClause(joined: "AND"));"
+					case .table:
+						// TODO: Implement other operation styles.
+						break
+				}
 		}
 		
 		return out
+	}
+	
+	func generateValuesClause(joined by: String) -> String {
+		guard let values = values else  {
+			preconditionFailure("Failed to provide values.")
+		}
+
+		return values.keys.map {
+			guard let value = values[$0] else {
+				preconditionFailure("Schema mismatch!")
+			}
+			
+			guard let stringSQLValue = value?.asSQL else {
+				return "NULL"
+			}
+			
+			return "\($0)=\(stringSQLValue)"
+		}.joined(separator: " \(by) ")
+	}
+	
+	func generateUpdate(configuration: Configuration) -> String {
+		let setClause = generateValuesClause(joined: ",")
+		return "UPDATE \(tableName) SET \(setClause) WHERE \(searchPredicate?.compile(for: configuration) ?? "");\n"
 	}
 	
 	/// Adds this operation to the configuration's operation buffer to be executed at the next `push`.

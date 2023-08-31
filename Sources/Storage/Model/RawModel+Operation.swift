@@ -134,7 +134,7 @@ public extension Model {
     
     /// Deletes this model from the .
     func delete() -> ModelOperation<Schema> {
-        ModelOperation(.delete, .row)
+		ModelOperation(.delete, .row, values: attributeValueStorage)
     }
     
     static func find(where predicate: Predicate<Schema>, offset: UInt = 0, count: UInt = 10) -> ModelOperation<Schema> {

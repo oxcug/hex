@@ -68,10 +68,23 @@ public struct DatabaseBackedKeyValueStore: KeyValueStorageProtocol {
     }
     
     public func set<T>(object: T?, forKey: String) where T : AttributeValue {
-        try! Model(with: DatabaseBackedKeyValue(lookup_key: forKey, stored_value: object as? String))
-            .upsert()
-            .commit(using: config)
-            .sync()
+		let exists = try! Model<DatabaseBackedKeyValue>
+			.find(where: .init(lhs: .columnSymbol("lookup_key"), op: .equals, rhs: .literalValue(forKey)))
+			.commit(using: config)
+			.sync()
+			.first != nil
+		
+		if exists {
+			try! Model(with: DatabaseBackedKeyValue(lookup_key: forKey, stored_value: object as? String))
+				.assign("stored_value", to: object)?
+				.commit(using: config)
+				.sync()
+		} else {
+			try! Model(with: DatabaseBackedKeyValue(lookup_key: forKey, stored_value: object as? String))
+				.upsert()
+				.commit(using: config)
+				.sync()
+		}
     }
     
     public func reset(scope: (any KeyValueStorageScope)?) {

@@ -22,4 +22,12 @@ class Test_KeyValue_ReadWrite: BaseKeyValueTestCase {
         str = "athing"
         XCTAssertEqual(str, "athing")
     }
+	
+	func testStringWriteTwice() {
+        XCTAssertEqual(str, "Hello, World")
+        str = "athing"
+        XCTAssertEqual(str, "athing")
+		str = "a special thing"
+		XCTAssertEqual(str, "a special thing")
+    }
 }
