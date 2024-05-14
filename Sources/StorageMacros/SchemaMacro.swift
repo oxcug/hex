@@ -239,12 +239,24 @@ extension SchemaMacro: PeerMacro {
         }
             .joined(separator: "\n")
         
+//        let variableImplementations = attributeDeclarations.map {
+//            if $0.nullable {
+//                "var \($0.identifier): \($0.type.asSwiftType) { (attributeStorage[\"\($0.identifier)\"] as! \($0.type.asSwiftType))! }"
+//            } else {
+//                "var \($0.identifier): \($0.type.asSwiftType) { attributeStorage[\"\($0.identifier)\"] as! \($0.type.asSwiftType) }"
+//            }
+//        }
+//            .joined(separator: "\n    ")
+        
         let decl: DeclSyntax = """
 protocol \(raw: typeName)Protocol {
     \(raw: variables)
 }
 """
-
+//extension Model<\(raw: typeName)>: \(raw: typeName)Protocol {
+//    \(raw: variableImplementations)
+//}
+//"""
         return [decl]
     }
 }

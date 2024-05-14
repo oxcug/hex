@@ -8,6 +8,6 @@
 @attached(peer, names: suffixed(Protocol))
 @attached(extension, conformances: SchemaRepresentable)
 @attached(memberAttribute)
-@attached(member, names: named(Conformant), named(_attributeMetadatas(filteredBy:)), named(_migrate(as:)), named(_schemaName))
+@attached(member, names: named(Conformant), named(_attributeMetadatas(filteredBy:)), named(_migrate(as:)), named(_schemaName), named(model))
 public macro Schema() = #externalMacro(module: "StorageMacros", type: "SchemaMacro")
 #endif

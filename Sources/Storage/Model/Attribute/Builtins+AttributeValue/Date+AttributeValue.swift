@@ -13,22 +13,15 @@ extension Date: AttributeValue {
     }
     
     public var asSQL: String {
-        "\"2023-07-01 10:22:00\""
-//        let formatter = DateFormatter()
-//        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
-//        return "\"\(formatter.string(from: self))\""
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:MM:ss"
+        return "\"\(formatter.string(from: self))\""
     }
     
     public init(sql: String) {
-//        print(sql)
-//        print("Trying to create Date Object")
-        self = Date.init(timeIntervalSinceNow: 0)
-//        print("succeeded!")
-//        print(ISO8601DateFormatter().string(from: self))
-//        print("x")
-//        let formatter = DateFormatter()
-//        formatter.dateFormat = "YYYY-MM-DD hh:mm:ss Z"
-//        self = formatter.date(from: sql)!
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:MM:ss"
+        self = formatter.date(from: sql)!
     }
 }
 
