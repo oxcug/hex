@@ -14,13 +14,13 @@ extension Date: AttributeValue {
     
     public var asSQL: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:MM:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return "\"\(formatter.string(from: self))\""
     }
     
     public init(sql: String) {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:MM:ss"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         self = formatter.date(from: sql)!
     }
 }
